@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.uv-cache/
+*.py[cod]
+.env
+uploads/
+media/
+models/
+data/
