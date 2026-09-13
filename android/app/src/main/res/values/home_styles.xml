@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="VhText">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/vh_ink</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:fontFamily">sans</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+    <style name="VhSection" parent="VhText">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="VhSecondary" parent="VhText">
+        <item name="android:textColor">@color/vh_muted</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+    <style name="VhNumber" parent="VhText">
+        <item name="android:textSize">20sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+</resources>

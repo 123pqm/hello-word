@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="vh_background">#F5F6F8</color>
+    <color name="vh_ink">#20242B</color>
+    <color name="vh_muted">#848A94</color>
+    <color name="vh_blue">#3474FF</color>
+    <color name="vh_teal">#35B4A4</color>
+</resources>

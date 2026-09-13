@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/cet4Root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F7F8FA"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp">
+        <TextView
+            android:id="@+id/cet4Back"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="返回"
+            android:gravity="center"
+            android:text="‹"
+            android:textColor="#1F2329"
+            android:textSize="32sp" />
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="CET-4 单词"
+            android:textColor="#1F2329"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+        <Button
+            android:id="@+id/cet4Confirm"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:minWidth="88dp"
+            android:text="确认(0)"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#3478F6" />
+    </LinearLayout>
+
+    <ListView
+        android:id="@+id/cet4Words"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingHorizontal="20dp"
+        android:paddingBottom="12dp"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="12dp" />
+    <ProgressBar
+        android:id="@+id/cet4Progress"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:visibility="gone"
+        android:layout_gravity="center_horizontal" />
+    <TextView
+        android:id="@+id/cet4Status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:gravity="center"
+        android:accessibilityLiveRegion="polite"
+        android:textColor="#667085" />
+    <Button
+        android:id="@+id/cet4Retry"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:text="重新加载"
+        android:visibility="gone" />
+</LinearLayout>

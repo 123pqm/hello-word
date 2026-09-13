@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:background="#FFFFFF"
+        android:elevation="10dp"
+        android:orientation="horizontal"
+        android:paddingTop="7dp"
+        android:paddingBottom="6dp">
+
+        <!-- 首页 -->
+        <LinearLayout
+            android:id="@+id/navHome"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/iconHome"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_home"
+                app:tint="#3478F6" />
+
+            <TextView
+                android:id="@+id/textHome"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="首页"
+                android:textColor="#3478F6"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+
+        <!-- 生词卡片 -->
+        <LinearLayout
+            android:id="@+id/navWords"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/iconWords"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/ic_words"
+                app:tint="#8A919B" />
+
+            <TextView
+                android:id="@+id/textWords"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="生词卡片"
+                android:textColor="#8A919B"
+                android:textSize="13sp" />
+
+        </LinearLayout>
+
+
+        <!-- 片段学习 -->
+        <LinearLayout
+            android:id="@+id/navVideo"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/iconVideo"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_video"
+                app:tint="#8A919B" />
+
+            <TextView
+                android:id="@+id/textVideo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="片段学习"
+                android:textColor="#8A919B"
+                android:textSize="13sp" />
+
+        </LinearLayout>
+
+
+        <!-- 统计 -->
+        <LinearLayout
+            android:id="@+id/navStats"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/iconStats"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_stats"
+                app:tint="#8A919B" />
+
+            <TextView
+                android:id="@+id/textStats"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="统计"
+                android:textColor="#8A919B"
+                android:textSize="13sp" />
+
+        </LinearLayout>
+
+
+        <!-- 我的 -->
+        <LinearLayout
+            android:id="@+id/navProfile"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/iconProfile"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_profile"
+                app:tint="#8A919B" />
+
+            <TextView
+                android:id="@+id/textProfile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="我的"
+                android:textColor="#8A919B"
+                android:textSize="13sp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</merge>

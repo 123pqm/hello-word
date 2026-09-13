@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="vh_greeting">早上好！</string>
+    <string name="vh_subtitle">今天也要一起加油学习呀</string>
+    <string name="vh_new_task">新建学习任务</string>
+    <string name="vh_new_task_hint">上传电影，AI 分析生词</string>
+    <string name="vh_recent">最近学习</string>
+    <string name="vh_more">更多</string>
+    <string name="vh_movie">肖申克的救赎</string>
+    <string name="vh_last_studied">上次学习 2 天前</string>
+    <string name="vh_progress">进度 36%</string>
+    <string name="vh_today">今日学习</string>
+    <string name="vh_words">新学单词</string>
+    <string name="vh_duration">学习时长</string>
+    <string name="vh_mastered">已掌握</string>
+    <string name="vh_checkin">学习打卡</string>
+    <string name="vh_streak">已连续学习</string>
+    <string name="vh_days">天</string>
+    <string name="vh_min">min</string>
+    <string name="vh_32">32</string>
+    <string name="vh_18">18</string>
+    <string name="vh_24">24</string>
+    <string name="vh_7">7</string>
+    <string name="vh_mon">一</string>
+    <string name="vh_tue">二</string>
+    <string name="vh_wed">三</string>
+    <string name="vh_thu">四</string>
+    <string name="vh_fri">五</string>
+    <string name="vh_sat">六</string>
+    <string name="vh_sun">日</string>
+    <string name="vh_done">已打卡</string>
+    <string name="vh_pending">未打卡</string>
+    <string name="vh_poster_title">THE SHAWSHANK</string>
+    <string name="vh_poster_subtitle">R E D E M P T I O N</string>
+</resources>

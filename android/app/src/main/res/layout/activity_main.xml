@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="#F5F7FB"
+    android:clipToPadding="false"
+    android:scrollbars="none">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:focusableInTouchMode="true"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingTop="48dp"
+        android:paddingBottom="32dp">
+
+        <!-- 保留旧标题 ID，兼容原来的代码 -->
+        <TextView
+            android:id="@+id/tvHello"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Hello, World"
+            android:visibility="gone" />
+
+        <!-- Hello, World 逐笔手写动画 -->
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/lottieHello"
+            android:layout_width="match_parent"
+            android:layout_height="104dp"
+            android:layout_marginTop="12dp"
+            android:contentDescription="Hello, World"
+            android:scaleType="fitCenter"
+            app:lottie_rawRes="@raw/hello_world_write"
+            app:lottie_autoPlay="true"
+            app:lottie_loop="false" />
+
+        <!-- 副标题 -->
+        <TextView
+            android:id="@+id/tvWelcome"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Welcome back"
+            android:textColor="#697586"
+            android:textSize="16sp"
+            android:letterSpacing="0.04" />
+
+        <!-- 登录卡片 -->
+        <LinearLayout
+            android:id="@+id/loginCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="36dp"
+            android:orientation="vertical"
+            android:background="@drawable/login_card_background"
+            android:elevation="3dp"
+            android:padding="24dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="登录"
+                android:textColor="#20293D"
+                android:textSize="26sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="欢迎回来，开始今天的探索"
+                android:textColor="#697586"
+                android:textSize="14sp" />
+
+            <!-- 账号 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:labelFor="@id/etAccount"
+                android:text="账号"
+                android:textColor="#3F4A5F"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etAccount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="56dp"
+                android:layout_marginTop="8dp"
+                android:hint="请输入账号"
+                android:inputType="text"
+                android:imeOptions="actionNext"
+                android:nextFocusForward="@id/etPassword"
+                android:singleLine="true"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="14dp"
+                android:paddingBottom="14dp"
+                android:textSize="16sp"
+                android:textColor="#20293D"
+                android:textColorHint="#788496"
+                android:background="@drawable/login_input_background"
+                android:backgroundTint="@null"
+                app:backgroundTint="@null" />
+
+            <!-- 密码 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:labelFor="@id/etPassword"
+                android:text="密码"
+                android:textColor="#3F4A5F"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etPassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="56dp"
+                android:layout_marginTop="8dp"
+                android:hint="请输入密码"
+                android:inputType="textPassword"
+                android:imeOptions="actionDone"
+                android:singleLine="true"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="14dp"
+                android:paddingBottom="14dp"
+                android:textSize="16sp"
+                android:textColor="#20293D"
+                android:textColorHint="#788496"
+                android:background="@drawable/login_input_background"
+                android:backgroundTint="@null"
+                app:backgroundTint="@null" />
+
+            <!-- 登录按钮 -->
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnLogin"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="56dp"
+                android:layout_marginTop="28dp"
+                android:paddingTop="14dp"
+                android:paddingBottom="14dp"
+                android:text="登录"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:textAllCaps="false"
+                android:background="@drawable/login_button_background"
+                android:backgroundTint="@null"
+                app:backgroundTint="@null" />
+
+        </LinearLayout>
+
+        <!-- 注册入口 -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="还没有账号？"
+                android:textColor="#697586"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/tvRegister"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:minWidth="48dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:gravity="center"
+                android:text="立即注册"
+                android:textColor="#405DE6"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>
