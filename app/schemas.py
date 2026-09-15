@@ -30,9 +30,36 @@ class resign_response(BaseModel):
     reply:str
 
 class login_response(BaseModel):
-    account:str
-    reply:str
+    account: str
+    reply: str
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int
 
 class account_login(BaseModel):
     account:str=Field(min_length=5, max_length=15)
     password:str=Field(min_length=5, max_length=15)
+
+class chose_book_response(BaseModel):
+   reply:str
+
+class book_detail(BaseModel):
+    id:int
+    book_id:int
+
+
+class words(BaseModel):
+     word:str
+     meanig:str
+     pos:str
+
+
+class WordResponse(BaseModel):
+    id: int
+    word: str
+    meaning: str
+    pos: str | None = None
+
+
+class cet_4_response(BaseModel):
+    data: list[WordResponse]

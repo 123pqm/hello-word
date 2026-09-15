@@ -2,6 +2,7 @@
 __pycache__/
 .pytest_cache/
 .uv-cache/
+.pip-cache/
 *.py[cod]
 .env
 uploads/

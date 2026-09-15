@@ -4,10 +4,17 @@ version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi[standard]>=0.141.1",
+    "pwdlib[argon2]>=0.3.1,<0.4",
+    "PyJWT>=2.13,<3",
     "pymysql[rsa]>=1.1.1,<2",
     "pytest>=9.1.1",
     "python-dotenv>=1.0,<2",
 ]
+
+[[tool.uv.index]]
+name = "tuna"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
+default = true
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

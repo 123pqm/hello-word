@@ -79,6 +79,7 @@ def initialize_database() -> None:
         connection.select_db(name)
         create_words_table(connection)
         create_users_table(connection)
+        create_cet4(connection)
         connection.commit()
     finally:
         connection.close()
@@ -100,8 +101,34 @@ def create_users_table(connection:Connection)->None:
             CREATE TABLE IF NOT EXISTS users(
                id INt NOT NULL AUTO_INCREMENT PRIMARY KEY,
                account VARCHAR(15) NOT NULL UNIQUE,
-               password_hash VARCHAR(255) NOT NULL
+               password_hash VARCHAR(255) NOT NULL,
+               book_id INT NOT NULL DEFAULT 0
             )
             ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
             """
         )
+
+
+def create_cet4(connection: Connection)->None:
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS cet4(
+               word VARCHAR(50) NOT NULL UNIQUE,
+               pos  VARCHAR(32) NOT NULL,
+               meaning VARCHAR(200) NOT NULL
+            )
+            ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+            """
+        )
+        # IF NOT EXISTS 不会更新已有表，兼容旧版的 VARCHAR(10)。
+        cursor.execute("SHOW COLUMNS FROM cet4 LIKE 'pos'")
+        column = cursor.fetchone()
+        size = re.fullmatch(r"varchar\((\d+)\)", column["Type"])
+        if size and int(size.group(1)) < 32:
+            cursor.execute(
+                "ALTER TABLE cet4 MODIFY COLUMN pos VARCHAR(32) "
+                "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL"
+            )
+
+
