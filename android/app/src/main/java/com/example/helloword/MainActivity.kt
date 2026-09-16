@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import com.example.helloword.api.RetrofitClient
 import com.example.helloword.model.LoginRequest
+import com.example.helloword.model.RegisterRequest
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
@@ -28,6 +29,41 @@ class MainActivity : AppCompatActivity() {
         val accountInput = findViewById<EditText>(R.id.etAccount)
         val passwordInput = findViewById<EditText>(R.id.etPassword)
         val loginButton = findViewById<Button>(R.id.btnLogin)
+        val text = findViewById<TextView>(R.id.text)
+        val the_text = findViewById<TextView>(R.id.the_text)
+        val tvRegister = findViewById<TextView>(R.id.tvRegister)
+        val bftext =findViewById<TextView>(R.id.bf_text)
+        var key: Int = 1
+
+        fun setAuthMode(mode: Int) {
+            key = mode
+            if (key == 2) {
+                text.text = "注册"
+                the_text.text ="欢迎加入我们，让我们开始遨游词海吧"
+                loginButton.text = "注册"
+                tvRegister.text = "登录"
+                bftext.text ="返回"
+                accountInput.text.clear()
+                passwordInput.text.clear()
+            }
+            else{
+
+                text.text = "登录"
+                the_text.text ="欢迎回来，开始今天的探索吧"
+                loginButton.text = "登录"
+                tvRegister.text = "立即注册"
+                bftext.text ="还没有账号？"
+                accountInput.text.clear()
+                passwordInput.text.clear()
+            }
+        }
+
+        tvRegister.setOnClickListener {
+            setAuthMode(if (key == 1) 2 else 1)
+        }
+
+
+
 
         loginButton.setOnClickListener {
 
@@ -39,10 +75,24 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener // 本次点击到这里结束
             }
 
-            // 启动协程，里面就可以调用 suspend 登录方法
+
+
+            // key = 1 调用登录接口，key = 2 调用注册接口。
+            val submitKey = key
             loginButton.isEnabled = false
+            tvRegister.isEnabled = false
             lifecycleScope.launch {
                 try {
+                    if (submitKey == 2) {
+                        val result = RetrofitClient.apiService.register(
+                            RegisterRequest(account = account, password = password)
+                        )
+                        showMessage(result.reply ?: "注册成功，请登录")
+                        passwordInput.text.clear()
+                        setAuthMode(1)
+                        return@launch
+                    }
+
                     val result = RetrofitClient.apiService.login(
                         LoginRequest(
                             account= account,
@@ -86,6 +136,7 @@ class MainActivity : AppCompatActivity() {
                     showMessage("请求处理失败，请检查返回数据")
                 } finally {
                     loginButton.isEnabled = true
+                    tvRegister.isEnabled = true
                 }
             }
         }

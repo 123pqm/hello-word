@@ -141,11 +141,12 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="已选词书"
+                    android:text="匹配范围"
                     android:textColor="#7B8190"
                     android:textSize="14sp" />
 
                 <TextView
+                    android:id="@+id/uploadVocabularySummary"
                     android:layout_width="wrap_content"
                     android:layout_height="36dp"
                     android:layout_marginStart="14dp"
@@ -361,6 +362,19 @@
                 </LinearLayout>
 
             </LinearLayout>
+
+            <Button
+                android:id="@+id/confirmButton"
+                android:layout_width="160dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="16dp"
+                android:text="确认"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:backgroundTint="#3478F6"
+                android:gravity="center"
+                android:visibility="gone" />
 
         </LinearLayout>
 

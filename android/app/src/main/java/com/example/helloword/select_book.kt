@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.content.Intent
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import com.example.helloword.model.UploadVocabulary
 
 class select_book : AppCompatActivity() {
 
@@ -19,7 +20,9 @@ class select_book : AppCompatActivity() {
             startActivity(Intent(this, Cet4Activity::class.java))
         }
         findViewById<View>(R.id.nextButton).setOnClickListener {
-            startActivity(Intent(this, movie_upload::class.java))
+            startActivity(Intent(this, movie_upload::class.java).apply {
+                putExtra(UploadVocabulary.EXTRA_SOURCE, UploadVocabulary.SOURCE_BOOK)
+            })
         }
     }
 }

@@ -63,6 +63,7 @@
             android:padding="24dp">
 
             <TextView
+                android:id="@+id/text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="登录"
@@ -71,6 +72,7 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/the_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
@@ -169,9 +171,13 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
             android:orientation="horizontal"
-            android:gravity="center">
+            android:gravity="center"
+            android:visibility="visible"
+            android:id="@+id/register_block"
+            >
 
             <TextView
+                android:id="@+id/bf_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="还没有账号？"
@@ -182,18 +188,18 @@
                 android:id="@+id/tvRegister"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:minHeight="48dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
                 android:minWidth="48dp"
+                android:minHeight="48dp"
                 android:paddingStart="8dp"
                 android:paddingEnd="8dp"
-                android:gravity="center"
                 android:text="立即注册"
                 android:textColor="#405DE6"
                 android:textSize="14sp"
-                android:textStyle="bold"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true" />
+                android:textStyle="bold" />
 
         </LinearLayout>
 

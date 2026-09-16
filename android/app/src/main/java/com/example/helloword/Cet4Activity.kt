@@ -11,6 +11,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.helloword.api.RetrofitClient
 import com.example.helloword.model.Cet4Pages
+import com.example.helloword.model.UploadVocabulary
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -117,6 +118,11 @@ class Cet4Activity : AppCompatActivity() {
 
     private fun saveSelection() {
         if (saving) return
+        if (pages.selectedIds.isEmpty()) {
+            Toast.makeText(this, "请至少选择一个单词", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val selectedIds = pages.selectedIds.toIntArray()
         val selected = pages.selectedIds.map { it.toString() }.toSet()
         val key = selectionKey
         saving = true
@@ -130,6 +136,12 @@ class Cet4Activity : AppCompatActivity() {
                 Toast.makeText(this@Cet4Activity,
                     if (success) "已保存 ${selected.size} 个单词到本机" else "保存失败，请重试",
                     Toast.LENGTH_SHORT).show()
+                if (success) {
+                    startActivity(Intent(this@Cet4Activity, movie_upload::class.java).apply {
+                        putExtra(UploadVocabulary.EXTRA_SOURCE, UploadVocabulary.SOURCE_WORDS)
+                        putExtra(UploadVocabulary.EXTRA_WORD_IDS, selectedIds)
+                    })
+                }
             } finally {
                 saving = false
                 confirm.isEnabled = true
@@ -184,4 +196,5 @@ class Cet4Activity : AppCompatActivity() {
             return row
         }
     }
+
 }
