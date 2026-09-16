@@ -1,245 +1,180 @@
 package com.example.helloword
 
+import android.content.Intent
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
+import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import java.util.Locale
-import android.view.View
-import android.widget.Toast
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.example.helloword.api.RetrofitClient
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import okhttp3.MediaType
-import okhttp3.MultipartBody
-import okhttp3.RequestBody
-import okio.BufferedSink
-import okio.Okio
-import java.io.IOException
-import android.util.Log
+import com.example.helloword.model.UploadPhase
+import com.example.helloword.model.UploadSession
 import com.example.helloword.model.UploadVocabulary
-
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import java.util.Locale
 
 class movie_upload : AppCompatActivity() {
-
     private lateinit var uploadMovieCard: LinearLayout
-
     private lateinit var movieCover: ImageView
     private lateinit var movieName: TextView
     private lateinit var movieSize: TextView
     private lateinit var movieDuration: TextView
     private lateinit var btnRemoveMovie: TextView
-
     private lateinit var confirmButton: TextView
-    // 当前用户选择的视频
-    private var selectedVideoUri: Uri? = null
-    private var isUploading = false
-    private lateinit var vocabulary: UploadVocabulary
-    /**
-     * Android 官方文件选择器
-     */
-    private val videoPicker =
-        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+    private lateinit var uploadStatus: TextView
+    private lateinit var store: VideoUploadStore
+    private lateinit var incomingVocabulary: UploadVocabulary
+    private var renderedUri: String? = null
+    private var openingFlashcards = false
 
-            if (uri != null) {
-
-                selectedVideoUri = uri
-
-                // 尝试保留文件读取权限
+    private val videoPicker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null && ::store.isInitialized) {
+            try {
                 try {
-                    contentResolver.takePersistableUriPermission(
-                        uri,
-                        android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    )
-                } catch (_: Exception) {
+                    contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                } catch (_: SecurityException) {
+                    Toast.makeText(this, "此文件不支持长期访问，重启后可能需要重新选择", Toast.LENGTH_LONG).show()
                 }
-
-                showSelectedVideo(uri)
+                val (name, size) = getFileInfo(uri)
+                store.select(UploadSession(uri.toString(), name, size, getVideoDuration(uri), incomingVocabulary))
+            } catch (_: Exception) {
+                Toast.makeText(this, "无法读取视频，请重新选择", Toast.LENGTH_LONG).show()
             }
         }
-
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContentView(R.layout.upload_movie)
-        vocabulary = try {
+        val account = RetrofitClient.account
+        if (account.isNullOrBlank()) {
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
+            return
+        }
+        store = VideoUploadStore.forAccount(applicationContext, account)
+        incomingVocabulary = try {
             UploadVocabulary.fromParent(
                 intent.getStringExtra(UploadVocabulary.EXTRA_SOURCE),
                 intent.getIntArrayExtra(UploadVocabulary.EXTRA_WORD_IDS)
             )
         } catch (error: IllegalArgumentException) {
-            Toast.makeText(this, error.message, Toast.LENGTH_LONG).show()
-            finish()
-            return
+            store.state.value?.vocabulary ?: run {
+                Toast.makeText(this, error.message, Toast.LENGTH_LONG).show()
+                finish()
+                return
+            }
         }
-        findViewById<TextView>(R.id.uploadVocabularySummary).text = vocabulary.summary
-        findViewById<View>(R.id.btnBack).setOnClickListener {
-            finish()
-        }
-        initView()
-
-        initClick()
-    }
-    private fun initView() {
-
         uploadMovieCard = findViewById(R.id.uploadMovieCard)
-
         movieCover = findViewById(R.id.movieCover)
-
         movieName = findViewById(R.id.movieName)
-
         movieSize = findViewById(R.id.movieSize)
-
         movieDuration = findViewById(R.id.movieDuration)
-
         btnRemoveMovie = findViewById(R.id.btnRemoveMovie)
-
         confirmButton = findViewById(R.id.confirmButton)
-        confirmButton.visibility = View.GONE
-    }
-
-
-    private fun initClick() {
-
-        // 点击整个卡片上传电影
+        uploadStatus = findViewById(R.id.uploadStatus)
         uploadMovieCard.setOnClickListener {
-            if (isUploading) return@setOnClickListener
-
-            // video/* 表示只允许选择视频文件
-            videoPicker.launch(
-                arrayOf("video/*")
-            )
+            if (store.state.value?.isBusy != true) videoPicker.launch(arrayOf("video/*"))
         }
-
-
-        // 删除当前选择的视频
-        btnRemoveMovie.setOnClickListener {
-            if (isUploading) return@setOnClickListener
-
-            // 防止事件继续传递到外面的上传卡片
-            removeSelectedMovie()
-        }
-
+        btnRemoveMovie.setOnClickListener { store.clear() }
         confirmButton.setOnClickListener {
-            uploadSelectedVideo()
+            val session = store.state.value
+            if (session?.phase == UploadPhase.COMPLETED) {
+                lifecycleScope.launch { openFlashcards(session) }
+            } else store.upload()
         }
-
-
-        findViewById<TextView>(R.id.btnBack).setOnClickListener {
-            finish()
-        }
-    }
-
-
-    private fun uploadSelectedVideo() {
-        val uri = selectedVideoUri ?: return
-        if (isUploading) return
-
-        setUploading(true)
+        findViewById<View>(R.id.btnBack).setOnClickListener { finish() }
+        render(store.state.value)
         lifecycleScope.launch {
-            try {
-                val filePart = withContext(Dispatchers.IO) {
-                    val (fileName, fileSize) = getFileInfo(uri)
-                    val mediaType = MediaType.parse(
-                        contentResolver.getType(uri) ?: "application/octet-stream"
-                    )
-                    val requestBody = object : RequestBody() {
-                        override fun contentType(): MediaType? = mediaType
-
-                        override fun contentLength(): Long =
-                            if (fileSize > 0) fileSize else -1L
-
-                        override fun writeTo(sink: BufferedSink) {
-                            val input = contentResolver.openInputStream(uri)
-                                ?: throw IOException("无法读取所选视频")
-                            Okio.source(input).use { source ->
-                                sink.writeAll(source)
-                            }
-                        }
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch { store.observeProcessing() }
+                store.state.collect { render(it) }
+            }
+        }
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                store.state.map { session ->
+                    session?.result?.movieId?.takeIf {
+                        session.phase == UploadPhase.COMPLETED && !session.flashcardsOpened
                     }
-                    MultipartBody.Part.createFormData("file", fileName, requestBody)
+                }.distinctUntilChanged().collectLatest { movieId ->
+                    val session = store.state.value
+                    if (movieId != null && session != null) openFlashcards(session)
                 }
-                val textType = MediaType.parse("text/plain; charset=utf-8")
-                val modePart = RequestBody.create(textType, vocabulary.mode)
-                val idsPart = if (vocabulary.mode == UploadVocabulary.SELECTED_CET4) {
-                    RequestBody.create(textType, vocabulary.wordIds.joinToString(",", "[", "]"))
-                } else null
-                val response = RetrofitClient.apiService.uploadVideo(filePart, modePart, idsPart)
-
-                Log.d("VideoUpload", "状态码：${response.code()}")
-
-                if (response.isSuccessful) {
-                    Log.d("VideoUpload", "返回数据：${response.body()}")
-                } else {
-                    Log.e("VideoUpload", "错误内容：${response.errorBody()?.string()}")
-                }
-
-                val message = if (response.isSuccessful) {
-                    "上传成功"
-                } else {
-                    response.errorBody()?.close()
-                    "上传失败：${response.code()}"
-                }
-                Toast.makeText(this@movie_upload, message, Toast.LENGTH_LONG).show()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Toast.makeText(
-                    this@movie_upload,
-                    "上传失败：${e.localizedMessage ?: "请稍后重试"}",
-                    Toast.LENGTH_LONG
-                ).show()
-            } finally {
-                setUploading(false)
             }
         }
     }
 
-    private fun setUploading(uploading: Boolean) {
-        isUploading = uploading
-        confirmButton.isEnabled = !uploading
+    private suspend fun openFlashcards(session: UploadSession) {
+        val movieId = session.result?.movieId ?: return
+        if (openingFlashcards) return
+        openingFlashcards = true
+        confirmButton.isEnabled = false
+        uploadStatus.text = "处理完成，正在加载单词闪卡…"
+        try {
+            MovieWordsRepository.load(applicationContext, movieId)
+            // The user might have selected a different video while the request was in flight.
+            if (store.state.value?.result?.movieId != movieId || !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
+            startActivity(Intent(this, WordFlashcardActivity::class.java).apply {
+                putExtra(WordFlashcardActivity.EXTRA_MOVIE_ID, movieId)
+                putExtra(WordFlashcardActivity.EXTRA_VIDEO_URI, session.uri)
+            })
+            store.markFlashcardsOpened(movieId)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            uploadStatus.text = error.localizedMessage ?: "单词加载失败，请点击查看闪卡重试"
+        } finally {
+            openingFlashcards = false
+            confirmButton.isEnabled = store.state.value?.phase == UploadPhase.COMPLETED || store.state.value?.canUpload == true
+        }
+    }
+
+    private fun render(session: UploadSession?) {
+        val uploading = session?.isBusy == true
         uploadMovieCard.isEnabled = !uploading
         btnRemoveMovie.isEnabled = !uploading
-        confirmButton.text = if (uploading) "上传中…" else "确定"
-        confirmButton.visibility = if (selectedVideoUri != null) View.VISIBLE else View.GONE
+        btnRemoveMovie.visibility = if (session == null || uploading) View.GONE else View.VISIBLE
+        confirmButton.visibility = if (session?.showConfirm == true) View.VISIBLE else View.GONE
+        confirmButton.isEnabled = !openingFlashcards && (session?.canUpload == true || session?.phase == UploadPhase.COMPLETED)
+        confirmButton.text = when (session?.phase) {
+            UploadPhase.SUCCEEDED -> "已上传"
+            UploadPhase.COMPLETED -> "查看单词闪卡"
+            UploadPhase.UNAVAILABLE -> "任务不可用"
+            UploadPhase.PROCESS_FAILED -> "重新上传处理"
+            UploadPhase.FAILED, UploadPhase.INTERRUPTED -> "重试上传"
+            else -> "确认"
+        }
+        uploadStatus.text = session?.message ?: "请选择视频，确认后开始上传"
+        findViewById<TextView>(R.id.uploadVocabularySummary).text =
+            (session?.vocabulary ?: incomingVocabulary).summary
+        findViewById<TextView>(R.id.uploadScopeHint).apply {
+            visibility = if (session != null && session.vocabulary != incomingVocabulary) View.VISIBLE else View.GONE
+            text = "已恢复上次视频及其匹配范围；如需使用本次选择的词库，请移除视频后重新选择"
+        }
+        movieName.text = session?.name ?: "点击选择电影"
+        movieSize.text = session?.let { formatFileSize(it.size) } ?: "支持 MP4、MOV、MKV 等视频"
+        movieDuration.text = session?.duration ?: "点击此处上传本地视频"
+        if (renderedUri != session?.uri) {
+            renderedUri = session?.uri
+            movieCover.setImageResource(android.R.drawable.ic_menu_upload)
+            session?.let { loadVideoThumbnail(Uri.parse(it.uri)) }
+        }
     }
 
-    /**
-     * 用户选择电影之后更新 UI
-     */
-    private fun showSelectedVideo(uri: Uri) {
-
-        val fileInfo = getFileInfo(uri)
-
-        movieName.text = fileInfo.first
-
-        movieSize.text = formatFileSize(
-            fileInfo.second
-        )
-
-        movieDuration.text = getVideoDuration(uri)
-
-        btnRemoveMovie.visibility = TextView.VISIBLE
-
-        confirmButton.visibility= TextView.VISIBLE
-
-        // 获取视频第一帧当封面
-        loadVideoThumbnail(uri)
-    }
-
-
-    /**
-     * 获取文件名和文件大小
-     */
     private fun getFileInfo(uri: Uri): Pair<String, Long> {
 
         var fileName = "未知视频"
@@ -421,35 +356,6 @@ class movie_upload : AppCompatActivity() {
             e.printStackTrace()
         }
     }
-
-
-    /**
-     * 移除当前视频
-     */
-    private fun removeSelectedMovie() {
-
-        selectedVideoUri = null
-
-        movieName.text =
-            "点击选择电影"
-
-        movieSize.text =
-            "支持 MP4、MOV、MKV 等视频"
-
-        movieDuration.text =
-            "点击此处上传本地视频"
-
-        movieCover.setImageResource(
-            android.R.drawable.ic_menu_upload
-        )
-
-        btnRemoveMovie.visibility =
-            TextView.GONE
-        confirmButton.visibility=
-            TextView.GONE
-    }
-
-
 
 
 

@@ -37,6 +37,9 @@
         <activity
             android:name=".movie_upload"
             android:exported="false" />
+        <activity
+            android:name=".WordFlashcardActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

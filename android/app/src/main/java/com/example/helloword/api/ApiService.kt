@@ -15,7 +15,16 @@ import retrofit2.Response
 import retrofit2.http.Multipart
 import retrofit2.http.Part
 import com.example.helloword.model.VideoUploadResponse
+import com.example.helloword.model.MovieStatusResponse
+import com.example.helloword.model.MovieWordsResponse
+import retrofit2.http.Path
 interface ApiService {
+
+    @GET("video/{movie_id}/status")
+    suspend fun movieStatus(@Path("movie_id") movieId: Int): Response<MovieStatusResponse>
+
+    @GET("video/{movie_id}/words")
+    suspend fun movieWords(@Path("movie_id") movieId: Int): Response<MovieWordsResponse>
 
     @POST("user/sign")
     suspend fun register(

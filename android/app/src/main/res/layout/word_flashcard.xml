@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F7FA"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- ======================== -->
+        <!-- 顶部标题 -->
+        <!-- ======================== -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="单词闪卡"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="#1F2937"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="18dp" />
+
+
+        <!-- ======================== -->
+        <TextView
+            android:id="@+id/tvFlashcardProgress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:textColor="#6B7280"
+            android:textSize="14sp" />
+
+        <!-- 播放器预留区域 -->
+        <!-- 以后这里换成 PlayerView -->
+        <!-- ======================== -->
+        <FrameLayout
+            android:id="@+id/playerContainer"
+            android:layout_width="match_parent"
+            android:layout_height="210dp"
+            android:background="@drawable/bg_player_placeholder">
+
+            <TextView
+                android:id="@+id/playerPlaceholderText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="视频播放器区域"
+                android:textSize="16sp"
+                android:textColor="#9CA3AF" />
+
+        </FrameLayout>
+
+
+        <!-- ======================== -->
+        <!-- 单词卡片 -->
+        <!-- ======================== -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/bg_word_card"
+            android:elevation="4dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:padding="28dp">
+
+            <!-- 单词 -->
+            <TextView
+                android:id="@+id/tvWord"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="beautiful"
+                android:textColor="#111827"
+                android:textSize="34sp"
+                android:textStyle="bold" />
+
+            <!-- 音标 -->
+            <TextView
+                android:id="@+id/tvPhonetic"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="/ˈbjuːtɪfl/"
+                android:textColor="#6B7280"
+                android:textSize="17sp" />
+
+            <!-- 词性 -->
+            <TextView
+                android:id="@+id/tvPos"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="adj."
+                android:textColor="#3478F6"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <!-- 中文释义 -->
+            <TextView
+                android:id="@+id/tvMeaning"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="美丽的；漂亮的；美好的"
+                android:textColor="#374151"
+                android:textSize="20sp" />
+
+            <!-- 分割线 -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="28dp"
+                android:background="#E5E7EB" />
+
+            <!-- 电影字幕/例句 -->
+            <TextView
+                android:id="@+id/tvSentence"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="22dp"
+                android:gravity="center"
+                android:text="It's a beautiful day."
+                android:textColor="#1F2937"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/tvSentenceMeaning"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="今天真是美好的一天。"
+                android:textColor="#9CA3AF"
+                android:textSize="15sp" />
+
+        </LinearLayout>
+
+
+        <!-- ======================== -->
+        <!-- 底部操作按钮 -->
+        <!-- ======================== -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:orientation="horizontal"
+            android:weightSum="2">
+
+            <Button
+                android:id="@+id/btnUnknown"
+                android:layout_width="0dp"
+                android:layout_height="54dp"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:backgroundTint="#FFF1F1"
+                android:text="不认识"
+                android:textColor="#E5484D"
+                android:textSize="16sp" />
+
+            <Button
+                android:id="@+id/btnKnown"
+                android:layout_width="0dp"
+                android:layout_height="54dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:backgroundTint="#3478F6"
+                android:text="认识"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+        </LinearLayout>
+
+
+        <!-- 切换单词 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:layout_marginBottom="24dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnPrevious"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:minHeight="52dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:enabled="false"
+                android:backgroundTint="#FFFFFF"
+                android:text="← 上一个单词"
+                android:textColor="#3478F6"
+                android:textSize="16sp" />
+
+            <Button
+                android:id="@+id/btnNext"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:minHeight="52dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:backgroundTint="#FFFFFF"
+                android:text="下一个单词 →"
+                android:textColor="#3478F6"
+                android:textSize="16sp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>

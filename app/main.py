@@ -457,3 +457,5 @@ async def upload_video(
         }
     }
 app.include_router(router)
+from app.video_status import router as video_status_router
+app.include_router(video_status_router)
