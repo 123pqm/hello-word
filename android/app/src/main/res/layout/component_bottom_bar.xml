@@ -62,7 +62,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="3dp"
-                android:text="生词卡片"
+                android:text="我的词书"
                 android:textColor="#8A919B"
                 android:textSize="13sp" />
 
@@ -81,7 +81,7 @@
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/iconVideo"
                 android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_height="31dp"
                 android:src="@drawable/ic_video"
                 app:tint="#8A919B" />
 
@@ -90,7 +90,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="3dp"
-                android:text="片段学习"
+                android:text="我的观影"
                 android:textColor="#8A919B"
                 android:textSize="13sp" />
 

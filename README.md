@@ -1,8 +1,12 @@
-# AI 影视词汇学习后端
+# AI 影视词汇学习（Android + FastAPI）
+
+主开发目录统一为 `D:\hello-word-repo`。`android/` 是 Android 项目，`app/` 和 `tests/` 是后端与测试；在仓库根目录提交会同时包含两部分。C 盘旧项目保留作备份，以后不在那里继续修改、提交或启动后端。
+
+本次整合保留 D 盘的注册、上传状态、首页学习联动、闪卡与播放器，并接入 C 盘的 Whisper、CET4 匹配和句子时间处理。上传接口返回任务编号，后台完成后由 Android 查询状态、加载闪卡；点击视频提示跳到句子开始。`我的观影` 目前只有布局与模型，尚未实现完整历史列表。
 
 当前数据库为本机 MySQL 8，通过 PyMySQL 连接。原 `data/words.db` 留作迁移来源，不再是接口读写的数据源。
 
-详细学习说明见 [SQLite 切换 MySQL 操作与代码说明](../MYSQL_SWITCH_GUIDE.md)。
+本地 `.env`、`data/`、`uploads/` 已从 C 盘复制并保持 Git 忽略。MySQL 数据仍保存在原本的本机数据库中；整合没有清空业务数据库或修改已有电影记录。历史记录中的旧视频路径仍指向原位置，所以暂时保留 C 盘备份。
 
 ## 首次配置与迁移
 
@@ -10,19 +14,22 @@
 
 当前默认地址为 `127.0.0.1:3306`，账号为 `root`，数据库为 `movie_vocab`。这是本机学习配置，正式部署使用专用数据库账号。
 
-在 Windows PowerShell 中进入当前 backend 目录，安装锁定依赖：
+在 Windows PowerShell 中进入仓库根目录。需要 Python 3.11+、uv、MySQL 和 PATH 中可用的 FFmpeg，安装锁定依赖：
 
 ```powershell
-& '..\..\tools\uv\bin\uv.exe' sync --cache-dir '.uv-cache'
+Set-Location 'D:\hello-word-repo'
+uv sync --locked --python 3.11 --cache-dir '.uv-cache'
 ```
 
-如果旧的 `tools/uv/bin/uv.exe` 路径提示拒绝访问，本次已在项目虚拟环境中安装可用的 uv，可以改用：
+当前电脑已在 D 盘创建独立 `.venv`，Python 和 uv 放在被忽略的 `.tools/`，可直接启动。需要再次同步时也可以使用本地 uv：
 
 ```powershell
-.\.venv\Scripts\python.exe -m uv sync --locked --inexact --cache-dir '.uv-cache'
+.\.tools\uv\bin\uv.exe sync --locked --cache-dir '.uv-cache'
 ```
 
-`--inexact` 保留环境里额外安装的 pip、uv 等工具。项目依赖和锁文件使用 TUNA HTTPS 镜像。
+Whisper 已加入依赖和锁文件。首次分析按需加载 `tiny.en`，模型未缓存时会下载；普通接口启动和离线测试不会触发模型加载。项目依赖和锁文件使用 TUNA HTTPS 镜像。
+
+启动会补建缺失的 `movies`、`movie_words` 表，并为缺少 ID 的旧 CET4 表增加编号；已有记录和已有 ID 不变。空数据库需要单独导入 CET4 词库：`python -m app.import_words`（使用项目虚拟环境）。
 
 如果 FastAPI 正在运行，先在它的终端按 Ctrl+C，再预览和迁移原数据：
 
@@ -111,3 +118,19 @@ SELECT id, word, meaning FROM words ORDER BY id;
 集成测试新建随机的 `movie_vocab_test_...` 数据库并在完成后删除它，不清空 `movie_vocab`。测试账号需要建库和删库权限。它覆盖原有查询、新增持久化、重复词、输入校验、中文/emoji、迁移重复运行、整批回滚以及启动流程。
 
 原 FastAPI/Starlette 依赖仍可能输出两条弃用警告；这与本次 MySQL 切换无关，检查最终是否 passed。
+
+## Android 与日常提交
+
+Android Studio 打开 `D:\hello-word-repo\android`。后端从根目录执行 `.\dev.ps1`；若 C 盘旧服务还占用 8000 端口，先在旧服务终端停止，再从 D 盘启动。Android 的 `RetrofitClient` 地址应与手机或模拟器可访问的电脑地址一致。
+
+在根目录提交和推送整个项目：
+
+```powershell
+Set-Location 'D:\hello-word-repo'
+git status
+git add .
+git commit -m "说明本次修改"
+git push origin master
+```
+
+不要把 `.env`、虚拟环境、数据库、上传视频、构建产物和缓存加入提交。

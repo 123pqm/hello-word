@@ -54,7 +54,7 @@ class words(BaseModel):
      pos:str
 
 
-class WordResponse(BaseModel):
+class Cet4WordResponse(BaseModel):
     id: int
     word: str
     meaning: str
@@ -62,4 +62,4 @@ class WordResponse(BaseModel):
 
 
 class cet_4_response(BaseModel):
-    data: list[WordResponse]
+    data: list[Cet4WordResponse]

@@ -20,10 +20,6 @@ import com.example.helloword.model.UploadPhase
 import com.example.helloword.model.UploadSession
 import com.example.helloword.model.UploadVocabulary
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import java.util.Locale
 
 class movie_upload : AppCompatActivity() {
@@ -104,43 +100,23 @@ class movie_upload : AppCompatActivity() {
                 store.state.collect { render(it) }
             }
         }
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.RESUMED) {
-                store.state.map { session ->
-                    session?.result?.movieId?.takeIf {
-                        session.phase == UploadPhase.COMPLETED && !session.flashcardsOpened
-                    }
-                }.distinctUntilChanged().collectLatest { movieId ->
-                    val session = store.state.value
-                    if (movieId != null && session != null) openFlashcards(session)
-                }
-            }
-        }
+        FlashcardNavigation.bind(this, store, ::showFlashcardLoading, ::showFlashcardError)
     }
 
     private suspend fun openFlashcards(session: UploadSession) {
         val movieId = session.result?.movieId ?: return
-        if (openingFlashcards) return
-        openingFlashcards = true
-        confirmButton.isEnabled = false
-        uploadStatus.text = "处理完成，正在加载单词闪卡…"
-        try {
-            MovieWordsRepository.load(applicationContext, movieId)
-            // The user might have selected a different video while the request was in flight.
-            if (store.state.value?.result?.movieId != movieId || !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
-            startActivity(Intent(this, WordFlashcardActivity::class.java).apply {
-                putExtra(WordFlashcardActivity.EXTRA_MOVIE_ID, movieId)
-                putExtra(WordFlashcardActivity.EXTRA_VIDEO_URI, session.uri)
-            })
-            store.markFlashcardsOpened(movieId)
-        } catch (error: CancellationException) {
-            throw error
-        } catch (error: Exception) {
-            uploadStatus.text = error.localizedMessage ?: "单词加载失败，请点击查看闪卡重试"
-        } finally {
-            openingFlashcards = false
-            confirmButton.isEnabled = store.state.value?.phase == UploadPhase.COMPLETED || store.state.value?.canUpload == true
-        }
+        FlashcardNavigation.open(this, store, movieId,
+            onLoading = ::showFlashcardLoading, onError = ::showFlashcardError)
+    }
+
+    private fun showFlashcardLoading(loading: Boolean) {
+        openingFlashcards = loading
+        confirmButton.isEnabled = !loading && (store.state.value?.phase == UploadPhase.COMPLETED || store.state.value?.canUpload == true)
+        if (loading) uploadStatus.text = "处理完成，正在加载单词闪卡…"
+    }
+
+    private fun showFlashcardError(message: String) {
+        uploadStatus.text = message
     }
 
     private fun render(session: UploadSession?) {

@@ -25,18 +25,14 @@
         </LinearLayout>
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:id="@+id/homeRecentLesson" android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/vh_card" android:padding="6dp">
             <FrameLayout android:layout_width="100dp" android:layout_height="132dp" android:background="@drawable/vh_poster_background" android:clipToOutline="true">
-                <ImageView android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/vh_movie_cover" android:scaleType="centerCrop" android:importantForAccessibility="no" />
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_gravity="bottom" android:orientation="vertical" android:gravity="center" android:paddingBottom="9dp">
-                    <TextView style="@style/VhText" android:textSize="8sp" android:textColor="#F7E8C9" android:fontFamily="serif" android:letterSpacing="0.05" android:text="@string/vh_poster_title" />
-                    <TextView style="@style/VhText" android:textSize="5sp" android:textColor="#D0C5AF" android:layout_marginTop="2dp" android:text="@string/vh_poster_subtitle" />
-                </LinearLayout>
+                <ImageView android:id="@+id/homeRecentCover" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@android:drawable/ic_menu_gallery" android:scaleType="centerCrop" android:importantForAccessibility="no" />
             </FrameLayout>
             <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:paddingStart="14dp" android:paddingEnd="9dp" android:paddingTop="8dp" android:paddingBottom="8dp">
-                <TextView style="@style/VhText" android:textSize="18sp" android:textStyle="bold" android:text="@string/vh_movie" />
-                <TextView style="@style/VhSecondary" android:layout_marginTop="12dp" android:text="@string/vh_last_studied" />
+                <TextView android:id="@+id/homeRecentTitle" style="@style/VhText" android:textSize="18sp" android:textStyle="bold" android:maxLines="2" android:ellipsize="end" android:text="暂无最近学习" />
+                <TextView android:id="@+id/homeRecentDetails" style="@style/VhSecondary" android:layout_marginTop="12dp" android:text="选择视频后，这里会显示电影信息" />
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="20dp">
-                    <ProgressBar android:layout_width="0dp" android:layout_height="6dp" style="@android:style/Widget.ProgressBar.Horizontal" android:layout_weight="1" android:id="@+id/homeLessonProgress" android:max="100" android:progress="36" android:indeterminate="false" android:progressDrawable="@drawable/vh_progress" android:progressTint="@color/vh_blue" android:progressBackgroundTint="#E8EAF0" android:importantForAccessibility="no" />
-                    <TextView style="@style/VhSecondary" android:id="@+id/homeLessonProgressLabel" android:textSize="11sp" android:layout_marginStart="10dp" android:text="@string/vh_progress" />
+                    <ProgressBar android:layout_width="0dp" android:layout_height="6dp" style="@android:style/Widget.ProgressBar.Horizontal" android:layout_weight="1" android:id="@+id/homeLessonProgress" android:max="100" android:progress="0" android:visibility="gone" android:indeterminate="false" android:progressDrawable="@drawable/vh_progress" android:progressTint="@color/vh_blue" android:progressBackgroundTint="#E8EAF0" android:importantForAccessibility="no" />
+                    <TextView style="@style/VhSecondary" android:id="@+id/homeLessonProgressLabel" android:textSize="11sp" android:layout_marginStart="10dp" android:text="" />
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>

@@ -18,6 +18,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import okhttp3.MediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -33,6 +35,7 @@ class VideoUploadStore private constructor(context: Context, private val account
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val mutableState = MutableStateFlow(readSaved())
     val state: StateFlow<UploadSession?> = mutableState
+    private val pollingMutex = Mutex()
 
     private fun readSaved(): UploadSession? = try {
         preferences.getString(account, null)?.let {
@@ -47,6 +50,7 @@ class VideoUploadStore private constructor(context: Context, private val account
             if (session == null) remove(account) else putString(account, gson.toJson(session))
         }.apply()
         mutableState.value = session
+        LearningStore.syncSession(account, session)
     }
 
     fun select(session: UploadSession) {
@@ -69,7 +73,7 @@ class VideoUploadStore private constructor(context: Context, private val account
         state.map { session ->
             session?.result?.movieId?.takeIf { session.phase == UploadPhase.PROCESSING }
         }.distinctUntilChanged().collectLatest { movieId ->
-            if (movieId != null) poll(movieId)
+            if (movieId != null) pollingMutex.withLock { poll(movieId) }
         }
     }
 
@@ -168,7 +172,10 @@ class VideoUploadStore private constructor(context: Context, private val account
         private val stores = mutableMapOf<String, VideoUploadStore>()
 
         // Called on the main thread. A returning Activity observes the existing job.
-        fun forAccount(context: Context, account: String): VideoUploadStore =
-            stores.getOrPut(account) { VideoUploadStore(context.applicationContext, account) }
+        fun forAccount(context: Context, account: String): VideoUploadStore {
+            val store = stores.getOrPut(account) { VideoUploadStore(context.applicationContext, account) }
+            if (RetrofitClient.account == account) LearningStore.activateAccount(account, store.state.value)
+            return store
+        }
     }
 }

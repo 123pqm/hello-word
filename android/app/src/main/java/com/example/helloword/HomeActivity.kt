@@ -18,6 +18,8 @@ import com.example.helloword.component.component_btobar
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import android.widget.Toast
+import com.example.helloword.api.RetrofitClient
 
 class HomeActivity : AppCompatActivity() {
 
@@ -43,6 +45,15 @@ class HomeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
+        RetrofitClient.account?.let { account ->
+            val store = VideoUploadStore.forAccount(applicationContext, account)
+            lifecycleScope.launch {
+                repeatOnLifecycle(Lifecycle.State.STARTED) { store.observeProcessing() }
+            }
+            FlashcardNavigation.bind(this, store, onError = { message ->
+                Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+            })
+        }
 
         // 避开系统状态栏和手势导航区域。
         WindowCompat.setDecorFitsSystemWindows(window, false)

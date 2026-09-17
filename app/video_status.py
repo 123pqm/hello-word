@@ -28,6 +28,7 @@ class MovieStatusResponse(BaseModel):
 class MatchedMovieWord(BaseModel):
     word: str
     meaning: str
+    # 新处理的视频为所在句子的起止秒数；历史记录仍保留原词时间。
     start_time: float
     end_time: float
 

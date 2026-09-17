@@ -78,7 +78,7 @@ def client(mysql_test_database, mysql_database):
 
     app.dependency_overrides[get_database] = test_connection
     # 不进入 TestClient 的 lifespan，避免应用初始化连接实际业务库。
-    test_client = TestClient(app)
+    test_client = TestClient(app, headers={"Authorization": "test-token"})
     try:
         yield test_client
     finally:

@@ -2,17 +2,22 @@ from typing import Annotated
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 import logging
+import json
 import os
 
 import jwt
 from fastapi import Depends, FastAPI, HTTPException, Path, Query, Response,Header,APIRouter, UploadFile, File, HTTPException
 from fastapi.security import APIKeyHeader
+from fastapi import BackgroundTasks, Form
 from pymysql import IntegrityError
 from pymysql.connections import Connection
 from starlette.concurrency import run_in_threadpool
 from pathlib import Path
 
 from app.database import get_database, initialize_database
+from app.tasks.movie_task import process_movie
+from app.services.cet4_service import load_cet4_vocabulary
+from app.schemas import Cet4WordResponse
 from app.schemas import WordCreate, WordListResponse, WordResponse,account_resign,resign_response,login_response,account_login,chose_book_response,book_detail,cet_4_response
 from pwdlib import PasswordHash
 import shutil
@@ -382,7 +387,7 @@ def cet4_detail(
             rows = cursor.fetchall()
 
         data = [
-            WordResponse(
+            Cet4WordResponse(
                 id=row["id"],
                 word=row["word"],
                 meaning=row["meaning"],
@@ -403,14 +408,39 @@ def cet4_detail(
 router = APIRouter(prefix="/video", tags=["视频"])
 
 # 视频保存目录
-UPLOAD_DIR = Path("uploads/videos")
+UPLOAD_DIR = Path(__file__).resolve().parent.parent / "uploads" / "videos"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
 @router.post("/upload")
-async def upload_video(
-    file: UploadFile = File(...)
+def upload_video(
+    background_tasks: BackgroundTasks,
+    database: Annotated[Connection, Depends(get_database)],
+    file: UploadFile = File(...),
+    selection_mode: str = Form("all_cet4"),
+    selected_word_ids: str | None = Form(None),
 ):
+    # 旧客户端未传范围时仍使用整本四级词库；自选模式必须提供有效 ID。
+    matching_ids = None
+    if selection_mode not in {"all_cet4", "selected_cet4"}:
+        raise HTTPException(status_code=422, detail="不支持的词汇匹配范围")
+    if selection_mode == "selected_cet4":
+        try:
+            matching_ids = json.loads(selected_word_ids or "null")
+            if (
+                not isinstance(matching_ids, list)
+                or not 1 <= len(matching_ids) <= 10000
+                or any(type(word_id) is not int or not 0 < word_id <= 2147483647 for word_id in matching_ids)
+            ):
+                raise ValueError("请传入非空的四级单词 ID 数组")
+            matching_ids = list(dict.fromkeys(matching_ids))
+            # 保存视频和启动 Whisper 之前校验，避免选错范围仍耗时识别。
+            load_cet4_vocabulary(database, matching_ids)
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+    elif selected_word_ids is not None:
+        raise HTTPException(status_code=422, detail="整本词库模式无需传入单词 ID")
+
     # 1. 判断是不是视频
     if not file.content_type or not file.content_type.startswith("video/"):
         raise HTTPException(
@@ -432,25 +462,44 @@ async def upload_video(
 
     file_path = UPLOAD_DIR / new_filename
 
-    # 4. 保存文件
+    # 4. 保存文件并提交记录，后台任务才能通过独立连接查到它。
     try:
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
+        with database.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO movies (file_name, file_path, status)
+                VALUES (%s, %s, %s)
+                """,
+                (file.filename, str(file_path), "pending"),
+            )
+            movie_id = cursor.lastrowid
+        database.commit()
+
     except Exception as e:
+        database.rollback()
+        file_path.unlink(missing_ok=True)
+        logger.exception("视频上传或入库失败")
         raise HTTPException(
             status_code=500,
-            detail=f"视频保存失败: {str(e)}"
-        )
+            detail="视频保存或入库失败，请稍后重试"
+        ) from e
 
     finally:
-        await file.close()
+        file.file.close()
+
+    # 仅传递 ID 和路径，不把请求连接或 UploadFile 交给后台。
+    background_tasks.add_task(process_movie, movie_id, str(file_path.resolve()), matching_ids)
 
     # 5. 返回结果
     return {
         "code": 200,
         "message": "上传成功",
         "data": {
+            "movie_id": movie_id,
+            "status": "pending",
             "originalFilename": file.filename,
             "filename": new_filename,
             "path": str(file_path)

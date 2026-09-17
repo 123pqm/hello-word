@@ -80,6 +80,7 @@ def initialize_database() -> None:
         create_words_table(connection)
         create_users_table(connection)
         create_cet4(connection)
+        create_movie_tables(connection)
         connection.commit()
     finally:
         connection.close()
@@ -114,6 +115,7 @@ def create_cet4(connection: Connection)->None:
         cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS cet4(
+               id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
                word VARCHAR(50) NOT NULL UNIQUE,
                pos  VARCHAR(32) NOT NULL,
                meaning VARCHAR(200) NOT NULL
@@ -121,6 +123,13 @@ def create_cet4(connection: Connection)->None:
             ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
             """
         )
+        # 为旧词库补充稳定 ID；已经存在的 ID 保持不变。
+        cursor.execute("SHOW COLUMNS FROM cet4 LIKE 'id'")
+        if cursor.fetchone() is None:
+            cursor.execute(
+                "ALTER TABLE cet4 ADD COLUMN id INT NOT NULL "
+                "AUTO_INCREMENT PRIMARY KEY FIRST"
+            )
         # IF NOT EXISTS 不会更新已有表，兼容旧版的 VARCHAR(10)。
         cursor.execute("SHOW COLUMNS FROM cet4 LIKE 'pos'")
         column = cursor.fetchone()
@@ -130,5 +139,36 @@ def create_cet4(connection: Connection)->None:
                 "ALTER TABLE cet4 MODIFY COLUMN pos VARCHAR(32) "
                 "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL"
             )
+
+
+def create_movie_tables(connection: Connection) -> None:
+    """与现有电影库兼容，只补建缺失的表，不重建或清空已有数据。"""
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS movies (
+                id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NULL,
+                file_name VARCHAR(255),
+                file_path VARCHAR(500),
+                status VARCHAR(20) DEFAULT 'pending',
+                error_message TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+            """
+        )
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS movie_words (
+                id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                movie_id INT NOT NULL,
+                word VARCHAR(100) NOT NULL,
+                meaning VARCHAR(500),
+                start_time DECIMAL(10,2) NOT NULL,
+                end_time DECIMAL(10,2) NOT NULL,
+                INDEX idx_movie_words_movie (movie_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+            """
+        )
 
 
