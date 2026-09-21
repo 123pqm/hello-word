@@ -81,15 +81,16 @@ def test_login_returns_signed_token(login_client, jwt_key, password_hash):
     assert password_hash not in response.text
     assert response.headers["cache-control"] == "no-store"
     assert response.headers["pragma"] == "no-cache"
-    sql, parameters = cursor.execute.call_args.args
+    sql, parameters = cursor.execute.call_args_list[0].args
     assert "SELECT id, account, password_hash" in sql
     assert parameters == ("demo_user",)
-    database.commit.assert_not_called()
+    database.commit.assert_called_once()
+    assert any("FOR UPDATE" in call.args[0] for call in cursor.execute.call_args_list)
 
 
 @pytest.mark.parametrize("missing_user", [False, True])
 def test_wrong_credentials_have_same_error(login_client, missing_user):
-    client, _, cursor = login_client
+    client, database, cursor = login_client
     if missing_user:
         cursor.fetchone.return_value = None
     response = client.post(
@@ -97,6 +98,7 @@ def test_wrong_credentials_have_same_error(login_client, missing_user):
     )
     assert response.status_code == 401
     assert response.json() == {"detail": "账号或密码错误"}
+    database.commit.assert_not_called()
 
 
 @pytest.mark.parametrize("payload", [
@@ -193,6 +195,12 @@ def test_register_then_login_with_isolated_mysql(client, mysql_database, jwt_key
         algorithms=[JWT_ALGORITHM], options={"require": ["sub", "iat", "exp"]},
     )
     assert claims["sub"] == str(registered.json()["id"])
+    with mysql_database.cursor() as cursor:
+        cursor.execute("SELECT last_login_date, login_streak, login_dates FROM users WHERE id=%s", (registered.json()["id"],))
+        checkin = cursor.fetchone()
+    assert checkin["last_login_date"] is not None
+    assert checkin["login_streak"] == 1
+    assert checkin["login_dates"] is not None
     assert client.post(
         "/user/login", json={**credentials, "password": "WrongPass123!"}
     ).status_code == 401

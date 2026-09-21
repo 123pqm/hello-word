@@ -24,6 +24,7 @@ class AuthSessionTest {
             assertEquals("token-a", RetrofitClient.token)
             assertEquals("test_a", RetrofitClient.account)
             assertEquals(71, RetrofitClient.userId)
+            assertTrue(RetrofitClient.hasValidSession())
             assertFalse(prefs.contains("password"))
 
             RetrofitClient.saveSession(LoginResponse("test_b", "ok", "token-b", "bearer", 1800, 72))
@@ -31,10 +32,15 @@ class AuthSessionTest {
             assertEquals("token-b", RetrofitClient.token)
             assertEquals(72, RetrofitClient.userId)
 
+            // 已被拒绝的内存凭证不能因磁盘上仍有旧值而跳过登录页。
+            RetrofitClient.token = null
+            assertFalse(RetrofitClient.hasValidSession())
+
             prefs.edit().putLong("expires_at", System.currentTimeMillis() - 1).commit()
             RetrofitClient.initialize(context)
             assertNull(RetrofitClient.token)
             assertNull(RetrofitClient.userId)
+            assertFalse(RetrofitClient.hasValidSession())
             assertNull(prefs.getString("access_token", null))
         } finally {
             val editor = prefs.edit().clear()

@@ -72,6 +72,7 @@
         <!-- AI 入口放在正中间，保留机器人原本的颜色。 -->
         <LinearLayout
             android:id="@+id/navAi"
+            android:background="@drawable/bg_ai_nav_selected"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"

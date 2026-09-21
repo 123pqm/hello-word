@@ -1,5 +1,6 @@
 package com.example.helloword
 
+import android.content.Intent
 import android.graphics.RenderEffect
 import android.graphics.Shader
 import android.graphics.Color
@@ -66,6 +67,16 @@ class WordFlashcardActivity : AppCompatActivity() {
             insets
         }
         ViewCompat.requestApplyInsets(root)
+        findViewById<View>(R.id.flashcardAi).setOnClickListener {
+            moviePlayer.pause()
+            startActivity(Intent(this, AiAssistantActivity::class.java).apply {
+                val word = words.getOrNull(currentIndex)?.takeUnless { loading || loadFailed }
+                if (word != null) {
+                    putExtra(AiAssistantActivity.EXTRA_WORD, word.word)
+                    putExtra(AiAssistantActivity.EXTRA_SENTENCE, word.sentenceText)
+                }
+            })
+        }
 
         // 找到 XML 里面的组件
         tvWord = findViewById(R.id.tvWord)

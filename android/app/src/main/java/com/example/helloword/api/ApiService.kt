@@ -20,6 +20,9 @@ import com.example.helloword.model.MovieWordsResponse
 import retrofit2.http.Header
 import retrofit2.http.Path
 interface ApiService {
+    @POST("user/checkin")
+    suspend fun checkin(@Header("Authorization") authorization: String): Response<com.example.helloword.model.CheckinResponse>
+
     @retrofit2.http.Streaming
     @GET("video/{movie_id}/cover")
     suspend fun movieCover(@Path("movie_id") movieId: Int): Response<okhttp3.ResponseBody>

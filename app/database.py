@@ -103,11 +103,24 @@ def create_users_table(connection:Connection)->None:
                id INt NOT NULL AUTO_INCREMENT PRIMARY KEY,
                account VARCHAR(15) NOT NULL UNIQUE,
                password_hash VARCHAR(255) NOT NULL,
-               book_id INT NOT NULL DEFAULT 0
+               book_id INT NOT NULL DEFAULT 0,
+               login_dates JSON NULL,
+               last_login_date DATE NULL,
+               login_streak INT NOT NULL DEFAULT 0
             )
             ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
             """
         )
+
+        # 兼容旧用户表；不清空历史资料，不伪造过去的登录记录。
+        for name, definition in (
+            ("login_dates", "JSON NULL"),
+            ("last_login_date", "DATE NULL"),
+            ("login_streak", "INT NOT NULL DEFAULT 0"),
+        ):
+            cursor.execute("SHOW COLUMNS FROM users LIKE %s", (name,))
+            if cursor.fetchone() is None:
+                cursor.execute(f"ALTER TABLE users ADD COLUMN {name} {definition}")
 
 
 def create_cet4(connection: Connection)->None:

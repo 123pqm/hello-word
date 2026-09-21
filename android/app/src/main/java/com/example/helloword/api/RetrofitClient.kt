@@ -35,8 +35,13 @@ object RetrofitClient {
         userId = preferences.getInt("user_id", 0).takeIf { it > 0 }
         expiresAt = preferences.getLong("expires_at", 0)
         token = preferences.getString("access_token", null)
-        if (userId == null || account.isNullOrBlank() || expiresAt <= System.currentTimeMillis()) clearSession()
+        if (!hasValidSession()) clearSession()
     }
+
+    @Synchronized
+    fun hasValidSession(): Boolean =
+        !token.isNullOrBlank() && !account.isNullOrBlank() &&
+            (userId ?: 0) > 0 && expiresAt > System.currentTimeMillis()
 
     @Synchronized
     fun saveSession(result: LoginResponse) {

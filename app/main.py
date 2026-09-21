@@ -16,6 +16,7 @@ from pathlib import Path
 
 from app.database import get_database, initialize_database
 from app.auth import get_current_user_id
+from app.checkin import checkin_status, router as checkin_router
 from app.tasks.movie_task import process_movie
 from app.services.cet4_service import load_cet4_vocabulary
 from app.schemas import Cet4WordResponse
@@ -284,8 +285,9 @@ def login(
                 detail="账号或密码错误",
             )
 
-        # 只有账号、密码都正确时才签发 token，不需要写入 users 表。
+        # 账号、密码正确才记录当天登录；同一天重复登录不重复计数。
         access_token = create_access_token(user["id"])
+        checkin_status(database, user["id"], mark=True)
         response.headers["Cache-Control"] = "no-store"
         response.headers["Pragma"] = "no-cache"
         return login_response(
@@ -511,3 +513,4 @@ def upload_video(
 app.include_router(router)
 from app.video_status import router as video_status_router
 app.include_router(video_status_router)
+app.include_router(checkin_router)

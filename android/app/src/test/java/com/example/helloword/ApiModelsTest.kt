@@ -8,6 +8,18 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ApiModelsTest {
+    @Test fun checkinReadsServerDatesAndStreak() {
+        val json = """{"code":200,"data":{"user_id":7,"today":"2026-09-23","week_count":2,"streak_days":9,"next_checkin_after_seconds":43200,"days":[{"date":"2026-09-23","weekday":3,"checked":true,"is_today":true}]}}"""
+        val data = Gson().fromJson(json, com.example.helloword.model.CheckinResponse::class.java).data!!
+        assertEquals(7, data.userId)
+        assertEquals(2, data.weekCount)
+        assertEquals(9, data.streakDays)
+        assertEquals(43200L, data.nextCheckinAfterSeconds)
+        assertEquals("2026-09-23", data.days[0].date)
+        assertTrue(data.days[0].isToday)
+        assertTrue(data.days[0].checked)
+    }
+
     @Test fun movieSentencesReadAndSurviveCacheRoundTripWithLegacyRows() {
         val gson = Gson()
         val result = gson.fromJson(

@@ -14,7 +14,7 @@
     <string name="vh_duration">学习时长</string>
     <string name="vh_mastered">已掌握</string>
     <string name="vh_checkin">学习打卡</string>
-    <string name="vh_streak">已连续学习</string>
+    <string name="vh_streak">连续登录</string>
     <string name="vh_days">天</string>
     <string name="vh_min">min</string>
     <string name="vh_32">32</string>

@@ -19,6 +19,8 @@ import com.example.helloword.component.component_btobar
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import android.widget.Toast
 import com.example.helloword.api.RetrofitClient
 
@@ -46,6 +48,15 @@ class HomeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
+        // 回到前台即打卡；持续停留时在北京时间午夜自动刷新。
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                while (isActive) {
+                    val seconds = CheckinStore.refresh()
+                    delay(seconds * 1000)
+                }
+            }
+        }
         RetrofitClient.account?.let { account ->
             val store = VideoUploadStore.forAccount(applicationContext, account)
             lifecycleScope.launch {
@@ -67,7 +78,8 @@ class HomeActivity : AppCompatActivity() {
             val bars = insets.getInsets(
                 WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
             )
-            view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            val keyboard = insets.getInsets(WindowInsetsCompat.Type.ime())
+            view.setPadding(bars.left, bars.top, bars.right, maxOf(bars.bottom, keyboard.bottom))
             insets
         }
         ViewCompat.requestApplyInsets(homeRoot)
@@ -83,6 +95,10 @@ class HomeActivity : AppCompatActivity() {
         // 点击只修改选中状态，并执行对应页面的操作。
         bottomBar.onItemClick = click@{ index ->
             if (index !in itemIds.indices) return@click
+            if (index != 2) {
+                WindowCompat.getInsetsController(window, window.decorView)
+                    .hide(WindowInsetsCompat.Type.ime())
+            }
             if (index == 1) {
                 curindex.value = index
                 showMyBooksPage()
@@ -100,7 +116,7 @@ class HomeActivity : AppCompatActivity() {
                     showHomePage()
                     println("首页")
                 }
-                2 -> Toast.makeText(this, "AI 功能暂未开放", Toast.LENGTH_SHORT).show()
+                2 -> showAiPage()
                 4 -> showProfilePage()
             }
         }
@@ -159,6 +175,14 @@ class HomeActivity : AppCompatActivity() {
         supportFragmentManager.beginTransaction()
             .setReorderingAllowed(true)
             .replace(R.id.pageContainer, ProfileFragment())
+            .commit()
+    }
+
+    private fun showAiPage() {
+        if (supportFragmentManager.findFragmentById(R.id.pageContainer) is AiAssistantFragment) return
+        supportFragmentManager.beginTransaction()
+            .setReorderingAllowed(true)
+            .replace(R.id.pageContainer, AiAssistantFragment())
             .commit()
     }
 

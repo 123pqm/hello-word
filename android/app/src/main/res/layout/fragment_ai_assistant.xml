@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="#F7F8FA"
+    android:focusableInTouchMode="true">
+
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="64dp"
+        android:paddingHorizontal="12dp" android:gravity="center_vertical">
+        <TextView android:id="@+id/aiBack" android:layout_width="48dp" android:layout_height="48dp"
+            android:text="‹" android:textSize="32sp" android:textColor="#1F2937" android:gravity="center"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:visibility="invisible" android:focusable="true" android:contentDescription="返回单词闪卡" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:text="AI 学习助手" android:textColor="#1F2937" android:textSize="20sp"
+            android:textStyle="bold" android:gravity="center" android:accessibilityHeading="true" />
+        <ImageButton android:id="@+id/aiHistory" style="@style/AiIconAction"
+            android:src="@drawable/vh_clock" android:tint="#7B8696" android:contentDescription="对话历史" />
+    </LinearLayout>
+
+    <ScrollView android:id="@+id/aiContentScroll"
+        android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+        android:fillViewport="true" android:clipToPadding="false">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:paddingHorizontal="16dp" android:paddingBottom="16dp">
+
+            <ImageView android:layout_width="86dp" android:layout_height="86dp" android:layout_gravity="center_horizontal"
+                android:src="@drawable/vh_robot" android:importantForAccessibility="no" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp"
+                android:text="今天想学点什么？" android:textSize="24sp" android:textStyle="bold"
+                android:textColor="#1F2937" android:gravity="center" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp"
+                android:text="从一个单词，到听懂一句台词" android:textColor="#818CA0" android:textSize="14sp" android:gravity="center" />
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="22dp"
+                android:orientation="horizontal" android:baselineAligned="false">
+                <LinearLayout android:id="@+id/aiExplainWord" style="@style/AiShortcut" android:layout_marginEnd="5dp">
+                    <ImageView style="@style/AiShortcutIcon" android:src="@drawable/ic_words" />
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/AiShortcutTitle" android:text="单词讲解" />
+                        <TextView style="@style/AiShortcutDetail" android:text="用法与搭配" />
+                    </LinearLayout>
+                </LinearLayout>
+                <LinearLayout android:id="@+id/aiTranslateSentence" style="@style/AiShortcut" android:layout_marginStart="5dp">
+                    <ImageView style="@style/AiShortcutIcon" android:src="@drawable/ic_ai_translation" />
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/AiShortcutTitle" android:text="例句翻译" />
+                        <TextView style="@style/AiShortcutDetail" android:text="读懂句子含义" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp"
+                android:orientation="horizontal" android:baselineAligned="false">
+                <LinearLayout android:id="@+id/aiAnalyzeLine" style="@style/AiShortcut" android:layout_marginEnd="5dp">
+                    <ImageView style="@style/AiShortcutIcon" android:src="@drawable/ic_video" />
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/AiShortcutTitle" android:text="台词解析" />
+                        <TextView style="@style/AiShortcutDetail" android:text="拆解语法与表达" />
+                    </LinearLayout>
+                </LinearLayout>
+                <LinearLayout android:id="@+id/aiPracticeEnglish" style="@style/AiShortcut" android:layout_marginStart="5dp">
+                    <ImageView style="@style/AiShortcutIcon" android:src="@drawable/ic_ai_practice" />
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView style="@style/AiShortcutTitle" android:text="语法解析" />
+                        <TextView style="@style/AiShortcutDetail" android:text="试着用英语回答" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/aiWordContext" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="18dp" android:background="@drawable/bg_ai_context" android:gravity="center_vertical"
+                android:paddingStart="14dp" android:paddingEnd="2dp" android:visibility="gone">
+                <ImageView android:layout_width="22dp" android:layout_height="22dp" android:src="@drawable/ic_words" android:tint="#3478F6" android:importantForAccessibility="no" />
+                <TextView android:id="@+id/aiContextWord" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="10dp"
+                    android:textSize="14sp" android:textColor="#3478F6" android:textStyle="bold" />
+                <TextView android:id="@+id/aiCloseContext" android:layout_width="48dp" android:layout_height="48dp"
+                    android:text="×" android:textSize="28sp" android:textColor="#8098BC" android:gravity="center"
+                    android:background="?attr/selectableItemBackgroundBorderless" android:focusable="true" android:contentDescription="移除当前单词定位" />
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/aiDemoConversation" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="end"
+                android:layout_marginTop="18dp" android:layout_marginStart="32dp" android:background="@drawable/bg_ai_question"
+                android:padding="14dp" android:text="beautiful 和 pretty 有什么区别？" android:textColor="#FFFFFF" android:textSize="15sp" />
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp"
+                android:gravity="center_vertical">
+                <ImageView android:layout_width="32dp" android:layout_height="32dp" android:src="@drawable/vh_robot" android:importantForAccessibility="no" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp"
+                    android:text="AI 学习助手 · 示例回答" android:textColor="#818CA0" android:textSize="12sp" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginStart="16dp" android:layout_marginTop="8dp" android:background="@drawable/bg_profile_card"
+                android:orientation="vertical" android:padding="16dp">
+                <TextView android:id="@+id/aiAnswer" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="beautiful：强调美丽、动人，适用范围更广。\n\npretty：偏向好看、秀气，常用于人或小巧的事物。"
+                    android:textColor="#303641" android:textSize="15sp" android:lineSpacingExtra="5dp" />
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginTop="16dp"
+                    android:layout_marginBottom="12dp" android:background="#EDF0F5" />
+                <TextView android:id="@+id/aiExample" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="What a beautiful day!" android:textColor="#303641" android:textSize="16sp" />
+                <TextView android:id="@+id/aiExampleMeaning" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp" android:text="多么美好的一天！" android:textColor="#818CA0" android:textSize="13sp" />
+                <LinearLayout android:layout_width="match_parent" android:layout_height="48dp" android:gravity="end">
+                    <ImageButton android:id="@+id/aiCopyAnswer" style="@style/AiIconAction"
+                        android:src="@drawable/ic_ai_copy" android:contentDescription="复制示例回答" />
+                    <ImageButton android:id="@+id/aiSaveAnswer" style="@style/AiIconAction"
+                        android:src="@drawable/ic_profile_bookmark" android:tint="#8B94A3" android:contentDescription="收藏回答" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- 输入区固定在滚动内容下方、底部导航上方。 -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:paddingHorizontal="16dp" android:paddingTop="8dp" android:paddingBottom="6dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="56dp"
+            android:background="@drawable/bg_ai_composer" android:gravity="center_vertical" android:paddingStart="16dp" android:paddingEnd="4dp">
+            <EditText android:id="@+id/aiQuestion" android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:minHeight="48dp" android:background="@null"
+                android:hint="问问单词、例句或电影台词…" android:textSize="14sp" android:textColor="#303641"
+                android:textColorHint="#929AA7" android:inputType="textCapSentences" android:imeOptions="actionSend"
+                android:maxLength="2000" android:singleLine="true" android:contentDescription="输入学习问题" />
+            <ImageButton android:id="@+id/aiSend" android:layout_width="48dp" android:layout_height="48dp"
+                android:padding="12dp" android:layout_marginStart="8dp" android:background="@drawable/bg_ai_send"
+                android:src="@drawable/ic_ai_send" android:contentDescription="发送问题" />
+        </LinearLayout>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp"
+            android:gravity="center" android:text="AI 回答仅供学习参考" android:textSize="10sp" android:textColor="#929AA7" />
+    </LinearLayout>
+</LinearLayout>

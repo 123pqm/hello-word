@@ -9,6 +9,9 @@ import android.net.Uri
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.LinearLayout
+import android.graphics.Color
+import android.graphics.Typeface
 import android.widget.Toast
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -28,6 +31,13 @@ import java.util.Locale
 class HomeFragment : Fragment(R.layout.view_home) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        val calendar = view.findViewById<LinearLayout>(R.id.homeCheckinDays)
+        repeat(7) { index ->
+            val day = layoutInflater.inflate(R.layout.item_home_checkin, calendar, false)
+            day.findViewById<TextView>(R.id.checkinWeekday).text = listOf("一", "二", "三", "四", "五", "六", "日")[index]
+            calendar.addView(day)
+        }
+        renderCheckin(view, CheckinState())
         view.findViewById<View>(R.id.homeMore).setOnClickListener {
             startActivity(Intent(requireContext(), MyMoviesActivity::class.java))
         }
@@ -39,6 +49,7 @@ class HomeFragment : Fragment(R.layout.view_home) {
         RetrofitClient.account?.let { VideoUploadStore.forAccount(requireContext(), it) }
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch { CheckinStore.state.collect { renderCheckin(view, it) } }
                 launch { LearningStore.recentMovie.collect { renderRecent(view, it) } }
                 launch {
                     LearningStore.recentMovie.map { it?.uri }.distinctUntilChanged().collectLatest { uri ->
@@ -110,6 +121,32 @@ class HomeFragment : Fragment(R.layout.view_home) {
             UploadPhase.FAILED, UploadPhase.PROCESS_FAILED -> "失败，点击重试"
             UploadPhase.INTERRUPTED -> "上传中断"
             UploadPhase.UNAVAILABLE -> "任务不可用"
+        }
+    }
+
+    private fun renderCheckin(view: View, state: CheckinState) {
+        val sameUser = state.userId == RetrofitClient.userId
+        val data = state.data.takeIf { sameUser }
+        view.findViewById<TextView>(R.id.homeStreakDays).text = data?.streakDays?.toString() ?: "—"
+        view.findViewById<TextView>(R.id.homeCheckinSummary).text = when {
+            data != null -> "本周已登录 ${data.weekCount} 天 · 今天已打卡"
+            sameUser && state.error != null -> state.error
+            else -> "正在同步打卡记录…"
+        }
+        val calendar = view.findViewById<LinearLayout>(R.id.homeCheckinDays)
+        repeat(7) { index ->
+            val day = data?.days?.getOrNull(index)
+            val cell = calendar.getChildAt(index)
+            cell.findViewById<TextView>(R.id.checkinDate).text = day?.date?.takeLast(5)?.replace('-', '/') ?: "—"
+            cell.findViewById<TextView>(R.id.checkinWeekday).apply {
+                setTextColor(Color.parseColor(if (day?.isToday == true) "#3478F6" else "#737B87"))
+                setTypeface(null, if (day?.isToday == true) Typeface.BOLD else Typeface.NORMAL)
+            }
+            cell.findViewById<ImageView>(R.id.checkinMark).apply {
+                setImageResource(if (day?.checked == true) R.drawable.vh_check else R.drawable.vh_unchecked)
+                contentDescription = day?.let { "${it.date}，${if (it.checked) "已打卡" else "未打卡"}${if (it.isToday) "，今天" else ""}" }
+                    ?: "打卡记录未加载"
+            }
         }
     }
 }

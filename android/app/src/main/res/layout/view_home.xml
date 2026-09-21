@@ -65,39 +65,11 @@
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
                 <TextView style="@style/VhText" android:textSize="16sp" android:textStyle="bold" android:layout_width="0dp" android:layout_weight="1" android:accessibilityHeading="true" android:text="@string/vh_checkin" />
                 <TextView style="@style/VhSecondary" android:textSize="12sp" android:text="@string/vh_streak" />
-                <TextView style="@style/VhNumber" android:id="@+id/homeStreakDays" android:layout_marginStart="7dp" android:layout_marginEnd="6dp" android:textSize="23sp" android:text="@string/vh_7" />
+                <TextView style="@style/VhNumber" android:id="@+id/homeStreakDays" android:layout_marginStart="7dp" android:layout_marginEnd="6dp" android:textSize="23sp" android:text="—" />
                 <TextView style="@style/VhSecondary" android:textSize="12sp" android:text="@string/vh_days" />
             </LinearLayout>
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="18dp">
-                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-                    <TextView style="@style/VhText" android:textSize="12sp" android:textColor="#737B87" android:text="@string/vh_mon" />
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/vh_check" android:importantForAccessibility="yes" android:layout_marginTop="10dp" android:contentDescription="@string/vh_done" />
-                </LinearLayout>
-                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-                    <TextView style="@style/VhText" android:textSize="12sp" android:textColor="#737B87" android:text="@string/vh_tue" />
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/vh_check" android:importantForAccessibility="yes" android:layout_marginTop="10dp" android:contentDescription="@string/vh_done" />
-                </LinearLayout>
-                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-                    <TextView style="@style/VhText" android:textSize="12sp" android:textColor="#737B87" android:text="@string/vh_wed" />
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/vh_check" android:importantForAccessibility="yes" android:layout_marginTop="10dp" android:contentDescription="@string/vh_done" />
-                </LinearLayout>
-                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-                    <TextView style="@style/VhText" android:textSize="12sp" android:textColor="#737B87" android:text="@string/vh_thu" />
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/vh_check" android:importantForAccessibility="yes" android:layout_marginTop="10dp" android:contentDescription="@string/vh_done" />
-                </LinearLayout>
-                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-                    <TextView style="@style/VhText" android:textSize="12sp" android:textColor="#737B87" android:text="@string/vh_fri" />
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/vh_check" android:importantForAccessibility="yes" android:layout_marginTop="10dp" android:contentDescription="@string/vh_done" />
-                </LinearLayout>
-                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-                    <TextView style="@style/VhText" android:textSize="12sp" android:textColor="#737B87" android:text="@string/vh_sat" />
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/vh_check" android:importantForAccessibility="yes" android:layout_marginTop="10dp" android:contentDescription="@string/vh_done" />
-                </LinearLayout>
-                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-                    <TextView style="@style/VhText" android:textSize="12sp" android:textColor="#737B87" android:text="@string/vh_sun" />
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/vh_unchecked" android:importantForAccessibility="yes" android:layout_marginTop="10dp" android:contentDescription="@string/vh_pending" />
-                </LinearLayout>
-            </LinearLayout>
+            <LinearLayout android:id="@+id/homeCheckinDays" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="18dp" />
+            <TextView android:id="@+id/homeCheckinSummary" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp" android:gravity="center" android:textSize="12sp" android:textColor="#737B87" android:text="正在同步打卡记录…" android:accessibilityLiveRegion="polite" />
         </LinearLayout>
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>
