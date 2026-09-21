@@ -166,9 +166,14 @@ def create_movie_tables(connection: Connection) -> None:
                 meaning VARCHAR(500),
                 start_time DECIMAL(10,2) NOT NULL,
                 end_time DECIMAL(10,2) NOT NULL,
+                sentence_text TEXT NULL,
                 INDEX idx_movie_words_movie (movie_id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
             """
         )
+        # CREATE TABLE IF NOT EXISTS 不会升级旧表；保留旧记录，例句暂为 NULL。
+        cursor.execute("SHOW COLUMNS FROM movie_words LIKE 'sentence_text'")
+        if cursor.fetchone() is None:
+            cursor.execute("ALTER TABLE movie_words ADD COLUMN sentence_text TEXT NULL")
 
 

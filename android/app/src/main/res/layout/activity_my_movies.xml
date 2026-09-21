@@ -78,7 +78,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:text="查看和管理你的电影"
+            android:id="@+id/historyMessage"
+            android:text="按上传时间排列，点击已完成电影查看闪卡"
             android:textColor="#8A8A8A"
             android:textSize="13sp" />
 
@@ -95,6 +96,12 @@
             android:layout_height="0dp"
             android:layout_marginTop="18dp"
             android:layout_weight="1" />
+
+        <Button
+            android:id="@+id/historyLoadMore"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="刷新" />
 
 
         <!-- 没有电影的时候显示 -->

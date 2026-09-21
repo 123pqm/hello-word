@@ -28,6 +28,9 @@ import java.util.Locale
 class HomeFragment : Fragment(R.layout.view_home) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        view.findViewById<View>(R.id.homeMore).setOnClickListener {
+            startActivity(Intent(requireContext(), MyMoviesActivity::class.java))
+        }
 
         view.findViewById<View>(R.id.homeNewTask).setOnClickListener {
             startActivity(Intent(requireContext(), select_book::class.java))

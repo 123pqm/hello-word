@@ -48,5 +48,6 @@ def match_cet4_words(
                 "meaning": vocabulary[word],
                 "start": item.get("sentence_start", item["start"]),
                 "end": item.get("sentence_end", item["end"]),
+                "sentence_text": item.get("sentence_text"),
             })
     return matched

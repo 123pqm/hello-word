@@ -6,7 +6,8 @@ data class MovieWord(
     val word: String,
     val meaning: String,
     @SerializedName("start_time") val startTime: Double,
-    @SerializedName("end_time") val endTime: Double
+    @SerializedName("end_time") val endTime: Double,
+    @SerializedName("sentence_text") val sentenceText: String? = null
 )
 
 data class MovieWords(

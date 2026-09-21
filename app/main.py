@@ -15,6 +15,7 @@ from starlette.concurrency import run_in_threadpool
 from pathlib import Path
 
 from app.database import get_database, initialize_database
+from app.auth import get_current_user_id
 from app.tasks.movie_task import process_movie
 from app.services.cet4_service import load_cet4_vocabulary
 from app.schemas import Cet4WordResponse
@@ -288,6 +289,7 @@ def login(
         response.headers["Cache-Control"] = "no-store"
         response.headers["Pragma"] = "no-cache"
         return login_response(
+            user_id=user["id"],
             reply="登录成功",
             account=user["account"],
             access_token=access_token,
@@ -416,6 +418,7 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 def upload_video(
     background_tasks: BackgroundTasks,
     database: Annotated[Connection, Depends(get_database)],
+    user_id: Annotated[int, Depends(get_current_user_id)],
     file: UploadFile = File(...),
     selection_mode: str = Form("all_cet4"),
     selected_word_ids: str | None = Form(None),
@@ -470,10 +473,10 @@ def upload_video(
         with database.cursor() as cursor:
             cursor.execute(
                 """
-                INSERT INTO movies (file_name, file_path, status)
-                VALUES (%s, %s, %s)
+                INSERT INTO movies (user_id, file_name, file_path, status)
+                VALUES (%s, %s, %s, %s)
                 """,
-                (file.filename, str(file_path), "pending"),
+                (user_id, file.filename, str(file_path), "pending"),
             )
             movie_id = cursor.lastrowid
         database.commit()

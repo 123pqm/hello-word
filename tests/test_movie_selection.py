@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 from fastapi.testclient import TestClient
 
+from app.auth import get_current_user_id
 import app.main as main
 from app.services.cet4_service import match_cet4_words
 import app.tasks.movie_task as movie_task
@@ -38,6 +39,7 @@ def test_upload_passes_scope_to_background(monkeypatch, tmp_path, selection_data
     monkeypatch.setattr(main, "process_movie", worker)
     monkeypatch.setattr(main, "UPLOAD_DIR", tmp_path)
     main.app.dependency_overrides[main.get_database] = lambda: selection_database
+    main.app.dependency_overrides[get_current_user_id] = lambda: 7
     try:
         # 不启动 lifespan，避免初始化用户数据库。
         client = TestClient(main.app)
@@ -50,6 +52,7 @@ def test_upload_passes_scope_to_background(monkeypatch, tmp_path, selection_data
         selection_database.commit.assert_called_once()
     finally:
         main.app.dependency_overrides.pop(main.get_database)
+        main.app.dependency_overrides.pop(get_current_user_id)
 
 
 @pytest.mark.parametrize("ids", [None, "[]", "bad json", "[true]", '["1"]', "[0]", "[999]"])
@@ -58,6 +61,7 @@ def test_bad_selected_scope_cannot_fall_back_to_whole_book(monkeypatch, tmp_path
     monkeypatch.setattr(main, "process_movie", worker)
     monkeypatch.setattr(main, "UPLOAD_DIR", tmp_path)
     main.app.dependency_overrides[main.get_database] = lambda: selection_database
+    main.app.dependency_overrides[get_current_user_id] = lambda: 7
     try:
         form = {"selection_mode": "selected_cet4"}
         if ids is not None:
@@ -71,6 +75,7 @@ def test_bad_selected_scope_cannot_fall_back_to_whole_book(monkeypatch, tmp_path
         assert list(tmp_path.iterdir()) == []
     finally:
         main.app.dependency_overrides.pop(main.get_database)
+        main.app.dependency_overrides.pop(get_current_user_id)
 
 
 def test_selected_words_only_keep_first_occurrence(selection_database, monkeypatch, capsys):
@@ -88,7 +93,7 @@ def test_selected_words_only_keep_first_occurrence(selection_database, monkeypat
     movie_task.process_movie(17, "demo.mp4", [2])
     cursor = selection_database.cursor.return_value.__enter__.return_value
     assert cursor.executemany.call_args.args[1] == [
-        (17, "african", "非洲的", 2.0, 2.5),
+        (17, "african", "非洲的", 2.0, 2.5, None),
     ]
     assert cursor.execute.call_args.args[1] == ("completed", 17)
     assert capsys.readouterr().out.count("] african |") == 1
@@ -102,8 +107,8 @@ def test_dedup_normalizes_case_and_keeps_earliest_time(selection_database):
         {"word": "africa", "start": 6.0, "end": 6.5},
     ]
     expected = [
-        {"word": "african", "meaning": "非洲的", "start": 2.0, "end": 2.5},
-        {"word": "africa", "meaning": "非洲", "start": 4.0, "end": 4.5},
+        {"word": "african", "meaning": "非洲的", "start": 2.0, "end": 2.5, "sentence_text": None},
+        {"word": "africa", "meaning": "非洲", "start": 4.0, "end": 4.5, "sentence_text": None},
     ]
     assert match_cet4_words(words, selection_database) == expected
     # 不会跨电影/请求去重，也不会改变原始识别列表。

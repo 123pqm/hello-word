@@ -20,6 +20,11 @@ import retrofit2.HttpException
 import java.io.IOException
 
 class Cet4Activity : AppCompatActivity() {
+    companion object {
+        const val EXTRA_READ_ONLY = "cet4_read_only"
+    }
+
+    private var readOnly = false
     private lateinit var progress: ProgressBar
     private lateinit var status: TextView
     private lateinit var retry: Button
@@ -35,6 +40,7 @@ class Cet4Activity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        readOnly = intent.getBooleanExtra(EXTRA_READ_ONLY, false)
         if (RetrofitClient.token.isNullOrBlank()) { returnToLogin(); return }
         setContentView(R.layout.activity_cet4)
         val root = findViewById<View>(R.id.cet4Root)
@@ -48,11 +54,14 @@ class Cet4Activity : AppCompatActivity() {
         status = findViewById(R.id.cet4Status)
         retry = findViewById(R.id.cet4Retry)
         confirm = findViewById(R.id.cet4Confirm)
+        confirm.visibility = if (readOnly) View.GONE else View.VISIBLE
+        confirm.isEnabled = !readOnly
+        findViewById<View>(R.id.cet4TitleSpacer).visibility = if (readOnly) View.VISIBLE else View.GONE
         list = findViewById(R.id.cet4Words)
         val restored = savedInstanceState?.getIntArray("selected_ids")?.toList()
             ?: getSharedPreferences("cet4_selection", MODE_PRIVATE)
                 .getStringSet(selectionKey, emptySet()).orEmpty().mapNotNull { it.toIntOrNull() }
-        pages.selectedIds.addAll(restored)
+        if (!readOnly) pages.selectedIds.addAll(restored)
         list.adapter = adapter
         list.setOnScrollListener(object : AbsListView.OnScrollListener {
             override fun onScrollStateChanged(view: AbsListView, state: Int) {
@@ -65,7 +74,7 @@ class Cet4Activity : AppCompatActivity() {
         })
         findViewById<View>(R.id.cet4Back).setOnClickListener { finish() }
         retry.setOnClickListener { loadWords() }
-        confirm.setOnClickListener { saveSelection() }
+        if (!readOnly) confirm.setOnClickListener { saveSelection() }
         updateConfirm()
         loadWords()
     }
@@ -117,7 +126,7 @@ class Cet4Activity : AppCompatActivity() {
     private fun updateConfirm() { confirm.text = "确认(${pages.selectedIds.size})" }
 
     private fun saveSelection() {
-        if (saving) return
+        if (readOnly || saving) return
         if (pages.selectedIds.isEmpty()) {
             Toast.makeText(this, "请至少选择一个单词", Toast.LENGTH_SHORT).show()
             return
@@ -174,6 +183,8 @@ class Cet4Activity : AppCompatActivity() {
         override fun getItem(position: Int) = pages.words[position]
         override fun getItemId(position: Int) = getItem(position).id.toLong()
         override fun hasStableIds() = true
+        override fun areAllItemsEnabled() = !readOnly
+        override fun isEnabled(position: Int) = !readOnly
         override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
             val row = convertView ?: layoutInflater.inflate(R.layout.item_cet4_word, parent, false)
             val word = getItem(position)
@@ -186,8 +197,15 @@ class Cet4Activity : AppCompatActivity() {
             val check = row.findViewById<CheckBox>(R.id.wordSelected)
             // 复用行时移除旧监听，防止勾选状态串到其他单词。
             check.setOnCheckedChangeListener(null)
+            check.visibility = if (readOnly) View.GONE else View.VISIBLE
+            check.isEnabled = !readOnly
             check.isChecked = word.id in pages.selectedIds
             check.contentDescription = "选择 ${word.word}"
+            if (readOnly) {
+                row.setOnClickListener(null)
+                row.isClickable = false
+                return row
+            }
             check.setOnCheckedChangeListener { _, checked ->
                 pages.select(word.id, checked)
                 updateConfirm()

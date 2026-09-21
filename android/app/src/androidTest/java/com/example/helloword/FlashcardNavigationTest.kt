@@ -37,14 +37,14 @@ class FlashcardNavigationTest {
         val account = "__flashcard_test__"
         val previousAccount = RetrofitClient.account
         val previousToken = RetrofitClient.token
-        val cache = File(context.filesDir, "movie_flashcards/$movieId.json")
-        val previousCache = if (cache.exists()) cache.readBytes() else null
-        cache.parentFile!!.mkdirs()
-        cache.writeText(Gson().toJson(MovieWords(movieId, words)))
+        val savedUserId = RetrofitClient.userId
+        val savedApi = MovieWordsRepository.apiService
+        MovieWordsRepository.apiService = movieApi(MovieWords(movieId, words))
         lateinit var store: VideoUploadStore
         instrumentation.runOnMainSync {
             RetrofitClient.account = account
             RetrofitClient.token = "test"
+            RetrofitClient.userId = 2_000_000_000
             store = VideoUploadStore.forAccount(context, account)
             store.clear()
             store.select(UploadSession("", "test.mp4", 100, "00:01:00",
@@ -76,20 +76,39 @@ class FlashcardNavigationTest {
                 store.clear()
                 RetrofitClient.account = previousAccount
                 RetrofitClient.token = previousToken
+                RetrofitClient.userId = savedUserId
+                MovieWordsRepository.apiService = savedApi
             }
-            if (previousCache == null) cache.delete() else cache.writeBytes(previousCache)
         }
     }
 
     @Test fun completedUploadOpensRealWordsAndNextChangesCard() {
-        withCompletedMovie(listOf(MovieWord("movie", "电影", 1.25, 1.8), MovieWord("world", "世界", 7.0, 7.5))) { _, flashcard ->
+        withCompletedMovie(listOf(MovieWord("movie", "电影", 1.25, 1.8, "It's a movie."), MovieWord("world", "世界", 7.0, 7.5))) { _, flashcard ->
             awaitText(flashcard, R.id.tvWord, "movie")
             awaitText(flashcard, R.id.tvMeaning, "电影")
             awaitText(flashcard, R.id.tvFlashcardProgress, "1 / 2")
+            awaitText(flashcard, R.id.tvSentence, "It's a movie.")
+            instrumentation.runOnMainSync {
+                val mask = flashcard.findViewById<android.view.View>(R.id.wordCardMask)
+                val reveal = flashcard.findViewById<android.view.View>(R.id.wordCardRevealArea)
+                assertEquals(reveal, mask.parent)
+                assertEquals(android.view.View.GONE, flashcard.findViewById<android.view.View>(R.id.tvSentenceStatus).visibility)
+                assertEquals(android.view.View.VISIBLE, mask.visibility)
+                reveal.performClick()
+                assertEquals(android.view.View.INVISIBLE, mask.visibility)
+            }
             instrumentation.runOnMainSync { flashcard.findViewById<TextView>(R.id.btnNext).performClick() }
             awaitText(flashcard, R.id.tvWord, "world")
             awaitText(flashcard, R.id.tvMeaning, "世界")
             awaitText(flashcard, R.id.btnNext, "完成学习")
+            instrumentation.runOnMainSync {
+                assertEquals(android.view.View.GONE, flashcard.findViewById<TextView>(R.id.tvSentence).visibility)
+                assertEquals("", flashcard.findViewById<TextView>(R.id.tvSentence).text.toString())
+                assertEquals(android.view.View.VISIBLE, flashcard.findViewById<android.view.View>(R.id.tvSentenceStatus).visibility)
+                assertEquals(android.view.View.VISIBLE, flashcard.findViewById<android.view.View>(R.id.wordCardMask).visibility)
+                flashcard.findViewById<TextView>(R.id.btnPrevious).performClick()
+            }
+            awaitText(flashcard, R.id.tvSentence, "It's a movie.")
         }
     }
 
@@ -97,7 +116,7 @@ class FlashcardNavigationTest {
         withCompletedMovie(emptyList()) { _, flashcard ->
             awaitText(flashcard, R.id.tvWord, "暂无匹配单词")
             awaitText(flashcard, R.id.btnNext, "返回")
-            instrumentation.runOnMainSync { assertFalse(flashcard.findViewById<TextView>(R.id.btnKnown).isEnabled) }
+            instrumentation.runOnMainSync { assertFalse(flashcard.findViewById<android.view.View>(R.id.wordCardRevealArea).isEnabled) }
         }
     }
 }

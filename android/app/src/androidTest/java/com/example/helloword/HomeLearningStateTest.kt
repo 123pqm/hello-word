@@ -35,14 +35,14 @@ class HomeLearningStateTest {
         val movieId = 2_000_000_002
         val oldAccount = RetrofitClient.account
         val oldToken = RetrofitClient.token
-        val cache = File(context.filesDir, "movie_flashcards/$movieId.json")
-        val originalCache = if (cache.exists()) cache.readBytes() else null
-        cache.parentFile!!.mkdirs()
-        cache.writeText(Gson().toJson(MovieWords(movieId, listOf(MovieWord("shared", "共享的", 1.0, 2.0)))))
+        val savedUserId = RetrofitClient.userId
+        val savedApi = MovieWordsRepository.apiService
+        MovieWordsRepository.apiService = movieApi(MovieWords(movieId, listOf(MovieWord("shared", "共享的", 1.0, 2.0))))
         lateinit var store: VideoUploadStore
         instrumentation.runOnMainSync {
             RetrofitClient.account = account
             RetrofitClient.token = "test"
+            RetrofitClient.userId = 2_000_000_000
             store = VideoUploadStore.forAccount(context, account)
             store.clear()
         }
@@ -79,9 +79,10 @@ class HomeLearningStateTest {
                 store.clear()
                 RetrofitClient.account = oldAccount
                 RetrofitClient.token = oldToken
+                RetrofitClient.userId = savedUserId
+                MovieWordsRepository.apiService = savedApi
                 oldAccount?.let { VideoUploadStore.forAccount(context, it) }
             }
-            if (originalCache == null) cache.delete() else cache.writeBytes(originalCache)
         }
     }
 }

@@ -30,6 +30,7 @@ class resign_response(BaseModel):
     reply:str
 
 class login_response(BaseModel):
+    user_id: int
     account: str
     reply: str
     access_token: str

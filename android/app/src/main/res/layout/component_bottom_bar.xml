@@ -9,8 +9,8 @@
         android:background="#FFFFFF"
         android:elevation="10dp"
         android:orientation="horizontal"
-        android:paddingTop="7dp"
-        android:paddingBottom="6dp">
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp">
 
         <!-- 首页 -->
         <LinearLayout
@@ -41,7 +41,7 @@
         </LinearLayout>
 
 
-        <!-- 生词卡片 -->
+        <!-- 我的词书 -->
         <LinearLayout
             android:id="@+id/navWords"
             android:layout_width="0dp"
@@ -69,7 +69,29 @@
         </LinearLayout>
 
 
-        <!-- 片段学习 -->
+        <!-- AI 入口放在正中间，保留机器人原本的颜色。 -->
+        <LinearLayout
+            android:id="@+id/navAi"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:contentDescription="AI 助手"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/iconAi"
+                android:layout_width="68dp"
+                android:layout_height="68dp"
+                android:src="@drawable/vh_robot"
+                android:scaleType="fitCenter"
+                android:importantForAccessibility="no" />
+
+        </LinearLayout>
+
+
+        <!-- 我的观影 -->
         <LinearLayout
             android:id="@+id/navVideo"
             android:layout_width="0dp"
@@ -91,34 +113,6 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="3dp"
                 android:text="我的观影"
-                android:textColor="#8A919B"
-                android:textSize="13sp" />
-
-        </LinearLayout>
-
-
-        <!-- 统计 -->
-        <LinearLayout
-            android:id="@+id/navStats"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <androidx.appcompat.widget.AppCompatImageView
-                android:id="@+id/iconStats"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_stats"
-                app:tint="#8A919B" />
-
-            <TextView
-                android:id="@+id/textStats"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
-                android:text="统计"
                 android:textColor="#8A919B"
                 android:textSize="13sp" />
 

@@ -28,6 +28,7 @@ class MainActivity : AppCompatActivity() {
         val welcome = findViewById<TextView>(R.id.tvWelcome)
         val accountInput = findViewById<EditText>(R.id.etAccount)
         val passwordInput = findViewById<EditText>(R.id.etPassword)
+        accountInput.setText(RetrofitClient.account.orEmpty())
         val loginButton = findViewById<Button>(R.id.btnLogin)
         val text = findViewById<TextView>(R.id.text)
         val the_text = findViewById<TextView>(R.id.the_text)
@@ -106,8 +107,7 @@ class MainActivity : AppCompatActivity() {
                         return@launch
                     }
                     // 后续请求由 RetrofitClient 自动附加 Authorization 请求头。
-                    RetrofitClient.token = accessToken
-                    RetrofitClient.account = result.account ?: account
+                    RetrofitClient.saveSession(result)
                     showMessage(result.reply ?: "登录成功")
                     accountInput.text.clear()  // 清空账号
                     passwordInput.text.clear() // 清空密码

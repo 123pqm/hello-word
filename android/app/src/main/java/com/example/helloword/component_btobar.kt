@@ -31,11 +31,11 @@ class component_btobar @JvmOverloads constructor(
             onItemClick?.invoke(1)
         }
 
-        findViewById<LinearLayout>(R.id.navVideo).setOnClickListener {
+        findViewById<LinearLayout>(R.id.navAi).setOnClickListener {
             onItemClick?.invoke(2)
         }
 
-        findViewById<LinearLayout>(R.id.navStats).setOnClickListener {
+        findViewById<LinearLayout>(R.id.navVideo).setOnClickListener {
             onItemClick?.invoke(3)
         }
 

@@ -121,6 +121,7 @@ class VideoUploadStore private constructor(context: Context, private val account
             save(session.copy(phase = UploadPhase.FAILED, message = "请重新登录后上传"))
             return
         }
+        val uploadToken = RetrofitClient.token ?: return
         save(session.copy(phase = UploadPhase.UPLOADING, message = "正在上传，可离开此页面，返回后查看结果"))
         // Application-owned work continues when the upload Activity is finished.
         scope.launch {
@@ -141,7 +142,8 @@ class VideoUploadStore private constructor(context: Context, private val account
                     MultipartBody.Part.createFormData("file", session.name, body),
                     RequestBody.create(textType, vocabulary.mode),
                     if (vocabulary.mode == UploadVocabulary.SELECTED_CET4)
-                        RequestBody.create(textType, vocabulary.wordIds.joinToString(",", "[", "]")) else null
+                        RequestBody.create(textType, vocabulary.wordIds.joinToString(",", "[", "]")) else null,
+                    "Bearer $uploadToken"
                 )
                 val result = response.body()
                 response.errorBody()?.close()

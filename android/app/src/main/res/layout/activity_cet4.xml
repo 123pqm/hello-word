@@ -37,6 +37,12 @@
             android:text="确认(0)"
             android:textColor="#FFFFFF"
             android:backgroundTint="#3478F6" />
+        <View
+            android:id="@+id/cet4TitleSpacer"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:visibility="gone"
+            android:importantForAccessibility="no" />
     </LinearLayout>
 
     <ListView

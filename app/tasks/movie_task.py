@@ -29,11 +29,11 @@ def process_movie(movie_id: int, file_path: str, selected_word_ids: list[int] | 
             if cet4_words:
                 cursor.executemany(
                     """
-                    INSERT INTO movie_words (movie_id, word, meaning, start_time, end_time)
-                    VALUES (%s, %s, %s, %s, %s)
+                    INSERT INTO movie_words (movie_id, word, meaning, start_time, end_time, sentence_text)
+                    VALUES (%s, %s, %s, %s, %s, %s)
                     """,
                     [
-                        (movie_id, word["word"], word["meaning"], word["start"], word["end"])
+                        (movie_id, word["word"], word["meaning"], word["start"], word["end"], word.get("sentence_text"))
                         for word in cet4_words
                     ],
                 )

@@ -1,5 +1,6 @@
 package com.example.helloword
 
+import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
@@ -23,21 +24,21 @@ import com.example.helloword.api.RetrofitClient
 
 class HomeActivity : AppCompatActivity() {
 
-    // 当前选中的按钮：0 首页，1 生词卡片，2 片段学习，3 统计，4 我的。
+    // 当前选中的按钮：0 首页，1 我的词书，2 AI，3 我的观影，4 我的。
     private val curindex = MutableStateFlow(0)
     private lateinit var bottomBar: component_btobar
 
     private val textIds = intArrayOf(
-        R.id.textHome, R.id.textWords, R.id.textVideo,
-        R.id.textStats, R.id.textProfile
+        R.id.textHome, R.id.textWords, 0,
+        R.id.textVideo, R.id.textProfile
     )
     private val iconIds = intArrayOf(
-        R.id.iconHome, R.id.iconWords, R.id.iconVideo,
-        R.id.iconStats, R.id.iconProfile
+        R.id.iconHome, R.id.iconWords, R.id.iconAi,
+        R.id.iconVideo, R.id.iconProfile
     )
     private val itemIds = intArrayOf(
-        R.id.navHome, R.id.navWords, R.id.navVideo,
-        R.id.navStats, R.id.navProfile
+        R.id.navHome, R.id.navWords, R.id.navAi,
+        R.id.navVideo, R.id.navProfile
     )
     private val selectedColor = Color.parseColor("#3478F6")
     private val normalColor = Color.parseColor("#B0B0B0")
@@ -82,6 +83,16 @@ class HomeActivity : AppCompatActivity() {
         // 点击只修改选中状态，并执行对应页面的操作。
         bottomBar.onItemClick = click@{ index ->
             if (index !in itemIds.indices) return@click
+            if (index == 1) {
+                curindex.value = index
+                showMyBooksPage()
+                return@click
+            }
+            if (index == 3) {
+                // 观影历史是独立页面，返回后保留原页面的选中状态。
+                startActivity(Intent(this, MyMoviesActivity::class.java))
+                return@click
+            }
             curindex.value = index
 
             when (index) {
@@ -89,10 +100,8 @@ class HomeActivity : AppCompatActivity() {
                     showHomePage()
                     println("首页")
                 }
-                1 -> println("生词卡片")
-                2 -> println("片段学习")
-                3 -> println("统计")
-                4 -> println("我的")
+                2 -> Toast.makeText(this, "AI 功能暂未开放", Toast.LENGTH_SHORT).show()
+                4 -> showProfilePage()
             }
         }
 
@@ -112,13 +121,15 @@ class HomeActivity : AppCompatActivity() {
             val color = if (selected) selectedColor else normalColor
 
             bottomBar.findViewById<View>(itemIds[i]).isSelected = selected
-            bottomBar.findViewById<TextView>(textIds[i]).apply {
-                setTextColor(color)
-                setTypeface(null, if (selected) Typeface.BOLD else Typeface.NORMAL)
+            if (textIds[i] != 0) {
+                bottomBar.findViewById<TextView>(textIds[i]).apply {
+                    setTextColor(color)
+                    setTypeface(null, if (selected) Typeface.BOLD else Typeface.NORMAL)
+                }
             }
             // 与底部栏 XML 中的 app:tint 对应，图标和文字保持同色。
             bottomBar.findViewById<AppCompatImageView>(iconIds[i])
-                .supportImageTintList = ColorStateList.valueOf(color)
+                .supportImageTintList = if (iconIds[i] == R.id.iconAi) null else ColorStateList.valueOf(color)
         }
     }
 
@@ -132,6 +143,22 @@ class HomeActivity : AppCompatActivity() {
         supportFragmentManager.beginTransaction()
             .setReorderingAllowed(true)
             .replace(R.id.pageContainer, HomeFragment())
+            .commit()
+    }
+
+    private fun showMyBooksPage() {
+        if (supportFragmentManager.findFragmentById(R.id.pageContainer) is MyBooksFragment) return
+        supportFragmentManager.beginTransaction()
+            .setReorderingAllowed(true)
+            .replace(R.id.pageContainer, MyBooksFragment())
+            .commit()
+    }
+
+    private fun showProfilePage() {
+        if (supportFragmentManager.findFragmentById(R.id.pageContainer) is ProfileFragment) return
+        supportFragmentManager.beginTransaction()
+            .setReorderingAllowed(true)
+            .replace(R.id.pageContainer, ProfileFragment())
             .commit()
     }
 

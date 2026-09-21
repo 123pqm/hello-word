@@ -1,10 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/flashcardRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F5F7FA"
-    android:fillViewport="true">
+    android:orientation="vertical">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -69,6 +76,10 @@
                     android:textStyle="bold" />
 
             <FrameLayout
+                android:id="@+id/wordCardRevealArea"
+                android:minHeight="48dp"
+                android:clickable="true"
+                android:focusable="true"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
@@ -112,13 +123,14 @@
                     android:textSize="20sp" />
 
                 <!-- 分割线 -->
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="28dp"
-                    android:background="#E5E7EB" />
+                    <View
+                        android:id="@+id/sentenceDivider"
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="28dp"
+                        android:background="#E5E7EB" />
 
-                <!-- 电影字幕/例句 -->
+                    <!-- 电影字幕/例句 -->
                 <TextView
                     android:id="@+id/tvSentence"
                     android:layout_width="match_parent"
@@ -139,7 +151,7 @@
                     android:textColor="#9CA3AF"
                     android:textSize="15sp" />
 
-            </LinearLayout>
+                </LinearLayout>
 
 
             <!-- 遮罩覆盖内容，不参与卡片内容的高度计算。 -->
@@ -147,56 +159,45 @@
                 android:id="@+id/wordCardMask"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="#F5F7FA"
                 android:alpha="0.98"
-                android:clickable="true"
+                android:background="#F5F7FA"
+                android:clickable="false"
                 android:importantForAccessibility="no"
                 android:visibility="visible" />
 
             </FrameLayout>
+
+            <TextView
+                android:id="@+id/tvSentenceStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:text="暂无例句，重新上传并处理视频后可查看"
+                android:textColor="#6B7280"
+                android:textSize="14sp"
+                android:visibility="gone" />
         </LinearLayout>
 
-        <!-- ======================== -->
-        <!-- 底部操作按钮 -->
-        <!-- ======================== -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="22dp"
-            android:orientation="horizontal"
-            android:weightSum="2">
+    </LinearLayout>
+    </ScrollView>
 
-            <Button
-                android:id="@+id/btnUnknown"
-                android:layout_width="0dp"
-                android:layout_height="54dp"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                android:backgroundTint="#FFF1F1"
-                android:text="不认识"
-                android:textColor="#E5484D"
-                android:textSize="16sp" />
-
-            <Button
-                android:id="@+id/btnKnown"
-                android:layout_width="0dp"
-                android:layout_height="54dp"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:backgroundTint="#3478F6"
-                android:text="认识"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp" />
-
-        </LinearLayout>
-
+    <!-- 操作区独立于滚动内容，始终保留在屏幕底部。 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#F5F7FA"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp">
 
         <Button
             android:id="@+id/btnJumpToSentence"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minHeight="52dp"
-            android:layout_marginTop="14dp"
             android:enabled="false"
             android:backgroundTint="#EAF2FF"
             android:text="记不起来，跳转试一下"
@@ -207,8 +208,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:layout_marginBottom="24dp"
+            android:layout_marginTop="4dp"
             android:orientation="horizontal">
 
             <Button
@@ -240,4 +240,4 @@
 
     </LinearLayout>
 
-</ScrollView>
+</LinearLayout>

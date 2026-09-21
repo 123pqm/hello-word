@@ -67,7 +67,8 @@ def test_login_returns_signed_token(login_client, jwt_key, password_hash):
     assert body["reply"] == "登录成功"
     assert body["token_type"] == "bearer"
     assert body["expires_in"] == TOKEN_EXPIRE_SECONDS
-    assert set(body) == {"account", "reply", "access_token", "token_type", "expires_in"}
+    assert body["user_id"] == 7
+    assert set(body) == {"user_id", "account", "reply", "access_token", "token_type", "expires_in"}
     claims = jwt.decode(
         body["access_token"], jwt_key, algorithms=[JWT_ALGORITHM],
         options={"require": ["sub", "iat", "exp"]},

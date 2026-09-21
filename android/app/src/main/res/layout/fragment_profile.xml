@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F7F8FA">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:gravity="center"
+        android:text="我的"
+        android:textColor="#1F2937"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:accessibilityHeading="true" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:clipToPadding="false">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="12dp">
+
+            <LinearLayout
+                android:id="@+id/profileAccount"
+                style="@style/ProfileCard"
+                android:minHeight="106dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:foreground="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:padding="10dp"
+                    android:background="@drawable/bg_profile_avatar"
+                    android:src="@drawable/ic_profile"
+                    android:tint="#91ADDD"
+                    android:importantForAccessibility="no" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="8dp"
+                    android:orientation="vertical">
+                    <TextView style="@style/ProfileHeading" android:text="学习者" android:textSize="21sp" />
+                    <TextView style="@style/ProfileSubtitle" android:text="让每一次观影，都成为积累" />
+                </LinearLayout>
+                <ImageView style="@style/ProfileChevron" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/profileFavorites"
+                style="@style/ProfileCard"
+                android:minHeight="88dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:foreground="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="46dp"
+                    android:layout_height="46dp"
+                    android:padding="10dp"
+                    android:background="@drawable/bg_profile_bookmark"
+                    android:src="@drawable/ic_profile_bookmark"
+                    android:importantForAccessibility="no" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="14dp"
+                    android:layout_marginEnd="8dp"
+                    android:orientation="vertical">
+                    <TextView style="@style/ProfileHeading" android:text="我的收藏" />
+                    <TextView style="@style/ProfileSubtitle" android:text="收藏的单词与电影例句" />
+                </LinearLayout>
+                <ImageView style="@style/ProfileChevron" />
+            </LinearLayout>
+
+            <LinearLayout style="@style/ProfileCard">
+                <TextView style="@style/ProfileHeading" android:text="单词闪卡初始化设置" />
+                <TextView style="@style/ProfileSubtitle" android:text="进入每张闪卡时，默认显示的内容" android:layout_marginBottom="8dp" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/profileShowMeaning"
+                    style="@style/ProfileSwitch"
+                    android:text="显示单词释义"
+                    android:checked="false" />
+                <View style="@style/ProfileDivider" />
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/profileShowSentence"
+                    style="@style/ProfileSwitch"
+                    android:text="显示例句"
+                    android:checked="true" />
+                <View style="@style/ProfileDivider" />
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/profileShowTranslation"
+                    style="@style/ProfileSwitch"
+                    android:text="显示例句释义"
+                    android:checked="false" />
+            </LinearLayout>
+
+            <LinearLayout style="@style/ProfileCard">
+                <LinearLayout style="@style/ProfileRow" android:minHeight="0dp">
+                    <TextView style="@style/ProfileHeading" android:layout_width="0dp" android:layout_weight="1" android:text="本地存储" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="示例" android:textSize="12sp" android:textColor="#929AA7" />
+                </LinearLayout>
+                <TextView style="@style/ProfileSubtitle" android:layout_marginTop="10dp" android:text="已用 2.4 GB / 10 GB" android:textSize="14sp" />
+                <LinearLayout style="@style/ProfileRow" android:layout_marginTop="12dp" android:minHeight="0dp">
+                    <ProgressBar
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="0dp"
+                        android:layout_height="8dp"
+                        android:layout_weight="1"
+                        android:progressDrawable="@drawable/vh_progress"
+                        android:progressTint="#3478F6"
+                        android:progressBackgroundTint="#E8EAF0"
+                        android:max="100"
+                        android:progress="24"
+                        android:contentDescription="示例存储占用百分之二十四" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:text="24%" android:textSize="13sp" android:textColor="#7C8594" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout style="@style/ProfileCard" android:paddingTop="4dp" android:paddingBottom="4dp">
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/profileWifiOnly"
+                    style="@style/ProfileSwitch"
+                    android:text="仅 Wi-Fi 上传"
+                    android:checked="true" />
+                <View style="@style/ProfileDivider" />
+                <LinearLayout
+                    android:id="@+id/profileCache"
+                    style="@style/ProfileRow"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <TextView style="@style/ProfileRowLabel" android:text="缓存管理" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="8dp" android:text="1.2 GB" android:textSize="14sp" android:textColor="#7C8594" />
+                    <ImageView style="@style/ProfileChevron" />
+                </LinearLayout>
+                <View style="@style/ProfileDivider" />
+                <LinearLayout
+                    android:id="@+id/profileAbout"
+                    style="@style/ProfileRow"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <TextView style="@style/ProfileRowLabel" android:text="关于" />
+                    <ImageView style="@style/ProfileChevron" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

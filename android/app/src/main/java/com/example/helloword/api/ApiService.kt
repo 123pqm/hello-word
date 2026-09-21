@@ -17,8 +17,17 @@ import retrofit2.http.Part
 import com.example.helloword.model.VideoUploadResponse
 import com.example.helloword.model.MovieStatusResponse
 import com.example.helloword.model.MovieWordsResponse
+import retrofit2.http.Header
 import retrofit2.http.Path
 interface ApiService {
+    @retrofit2.http.Streaming
+    @GET("video/{movie_id}/cover")
+    suspend fun movieCover(@Path("movie_id") movieId: Int): Response<okhttp3.ResponseBody>
+    @GET("video/history")
+    suspend fun movieHistory(
+        @Query("limit") limit: Int = 30,
+        @Query("before_id") beforeId: Int? = null
+    ): Response<com.example.helloword.model.MovieHistoryResponse>
 
     @GET("video/{movie_id}/status")
     suspend fun movieStatus(@Path("movie_id") movieId: Int): Response<MovieStatusResponse>
@@ -48,6 +57,7 @@ interface ApiService {
     suspend fun uploadVideo(
         @Part file: MultipartBody.Part,
         @Part("selection_mode") selectionMode: RequestBody,
-        @Part("selected_word_ids") selectedWordIds: RequestBody?
+        @Part("selected_word_ids") selectedWordIds: RequestBody?,
+        @Header("Authorization") authorization: String? = null
     ): Response<VideoUploadResponse>
 }
