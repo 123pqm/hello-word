@@ -66,13 +66,17 @@
     </LinearLayout>
 
 
-    <!-- 点击进入电影详情的箭头 -->
+    <!-- 单独删除入口，点击卡片仍可查看闪卡。 -->
     <TextView
-        android:layout_width="30dp"
-        android:layout_height="40dp"
+        android:id="@+id/deleteMovie"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:gravity="center"
-        android:text="›"
-        android:textColor="#A0A4AB"
-        android:textSize="28sp" />
+        android:text="删除"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:textColor="#C43B3B"
+        android:textSize="14sp" />
 
 </LinearLayout>

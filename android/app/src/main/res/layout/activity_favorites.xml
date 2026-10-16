@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/favoritesRoot" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="#F7F8FA" android:orientation="vertical">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="64dp"
+        android:gravity="center_vertical" android:paddingHorizontal="16dp">
+        <TextView android:id="@+id/favoritesBack" android:layout_width="48dp" android:layout_height="48dp"
+            android:contentDescription="返回" android:gravity="center" android:text="‹" android:textColor="#1F2329" android:textSize="32sp" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:gravity="center" android:text="我的收藏" android:textColor="#1F2329" android:textSize="18sp" android:textStyle="bold" />
+        <View android:layout_width="48dp" android:layout_height="48dp" android:importantForAccessibility="no" />
+    </LinearLayout>
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout android:id="@+id/favoritesRefresh"
+        android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+        <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent">
+            <ListView android:id="@+id/favoritesWords" android:layout_width="match_parent" android:layout_height="match_parent"
+                android:clipToPadding="false" android:paddingHorizontal="20dp" android:paddingBottom="12dp"
+                android:divider="@android:color/transparent" android:dividerHeight="12dp" android:choiceMode="none" />
+            <TextView android:id="@+id/favoritesEmpty" android:layout_width="match_parent" android:layout_height="match_parent"
+                android:gravity="center" android:padding="32dp" android:visibility="gone"
+                android:text="还没有收藏的单词\n在单词闪卡上点星标，就会出现在这里"
+                android:textColor="#667085" android:textSize="16sp" android:lineSpacingExtra="8dp" />
+        </FrameLayout>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+    <TextView android:id="@+id/favoritesStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:padding="16dp" android:gravity="center" android:accessibilityLiveRegion="polite" android:textColor="#667085" />
+    <Button android:id="@+id/favoritesMore" android:layout_width="wrap_content" android:layout_height="48dp"
+        android:layout_gravity="center_horizontal" android:text="加载更多" android:visibility="gone" />
+</LinearLayout>

@@ -3,13 +3,14 @@ from time import perf_counter
 
 from app.database import connect_database
 from app.services.cet4_service import match_cet4_words
+from app.services.wordbook_service import match_wordbook_words
 from app.services.whisper_service import transcribe_movie
 
 
 logger = logging.getLogger(__name__)
 
 
-def process_movie(movie_id: int, file_path: str, selected_word_ids: list[int] | None = None):
+def process_movie(movie_id: int, file_path: str, selected_word_ids: list[int] | None = None, book_id: int = 1):
 
     print("开始处理电影：", movie_id)
 
@@ -23,9 +24,15 @@ def process_movie(movie_id: int, file_path: str, selected_word_ids: list[int] | 
 
         # 推理结束后创建独立连接，不复用上传请求的连接。
         database = connect_database()
-        cet4_words = match_cet4_words(words, database, selected_word_ids)
-        print(f"四级词汇匹配完成：去重后共 {len(cet4_words)} 个单词，每词保留首次出现所在句子的时间")
+        cet4_words = (match_cet4_words(words, database, selected_word_ids) if book_id == 1 else
+                      match_wordbook_words(words, database, book_id, selected_word_ids))
+        print(f"词书 {book_id} 匹配完成：去重后共 {len(cet4_words)} 个单词，每词保留首次出现所在句子的时间")
         with database.cursor() as cursor:
+            # 删除可能发生在转录期间。与删除接口持有同一行锁，防止删后又写回闪卡。
+            cursor.execute("SELECT id FROM movies WHERE id = %s FOR UPDATE", (movie_id,))
+            if cursor.fetchone() is None:
+                database.rollback()
+                return
             if cet4_words:
                 cursor.executemany(
                     """

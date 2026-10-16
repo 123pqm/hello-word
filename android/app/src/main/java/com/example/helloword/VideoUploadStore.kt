@@ -29,13 +29,23 @@ import java.io.IOException
 
 /** One retained upload per account. Never holds an Activity or a View. */
 class VideoUploadStore private constructor(context: Context, private val account: String) {
+    private val appContext = context.applicationContext
     private val resolver = context.applicationContext.contentResolver
     private val preferences = context.applicationContext.getSharedPreferences("video_upload_sessions", Context.MODE_PRIVATE)
     private val gson = Gson()
+    private val localMovies = LocalMovieFiles(context, account)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val mutableState = MutableStateFlow(readSaved())
     val state: StateFlow<UploadSession?> = mutableState
     private val pollingMutex = Mutex()
+
+    init {
+        state.value?.let { session ->
+            session.result?.movieId?.let {
+                if (localMovies.find(it) == null) localMovies.remember(it, Uri.parse(session.uri))
+            }
+        }
+    }
 
     private fun readSaved(): UploadSession? = try {
         preferences.getString(account, null)?.let {
@@ -46,6 +56,9 @@ class VideoUploadStore private constructor(context: Context, private val account
     }
 
     private fun save(session: UploadSession?) {
+        session?.result?.movieId?.let {
+            if (localMovies.find(it) == null) localMovies.remember(it, Uri.parse(session.uri))
+        }
         preferences.edit().apply {
             if (session == null) remove(account) else putString(account, gson.toJson(session))
         }.apply()
@@ -57,8 +70,26 @@ class VideoUploadStore private constructor(context: Context, private val account
         if (state.value?.isBusy != true) save(session)
     }
 
+    fun updateDraftVocabulary(vocabulary: UploadVocabulary) {
+        val draft = state.value ?: return
+        // 只修改尚未提交的草稿；已提交或上传结果不确定的任务保留原匹配范围。
+        if (RetrofitClient.account == account && draft.phase == UploadPhase.READY &&
+            draft.result == null && draft.vocabulary != vocabulary) {
+            save(draft.copy(vocabulary = vocabulary))
+        }
+    }
+
     fun clear() {
         if (state.value?.isBusy != true) save(null)
+    }
+
+    fun forgetDeletedMovie(movieId: Int) {
+        if (account == RetrofitClient.account) RetrofitClient.userId?.let {
+            VideoNotifications.cancelMovie(appContext, it, movieId)
+        }
+        if (state.value?.result?.movieId == movieId) save(null)
+        localMovies.remove(movieId)
+        LearningStore.releaseNavigation(account, movieId)
     }
 
     fun markFlashcardsOpened(movieId: Int) {
@@ -68,7 +99,7 @@ class VideoUploadStore private constructor(context: Context, private val account
         }
     }
 
-    // The caller's STARTED lifecycle owns polling, not the application upload scope.
+    // Foreground UI and the notification service share one poller through the mutex.
     suspend fun observeProcessing() {
         state.map { session ->
             session?.result?.movieId?.takeIf { session.phase == UploadPhase.PROCESSING }
@@ -84,20 +115,28 @@ class VideoUploadStore private constructor(context: Context, private val account
             if (current.result?.movieId != movieId || current.phase != UploadPhase.PROCESSING) return
             if (RetrofitClient.account != account) return
             try {
-                val response = RetrofitClient.apiService.movieStatus(movieId)
+                val trackingToken = current.result?.trackingToken
+                val response = if (trackingToken.isNullOrBlank()) statusApi.movieStatus(movieId)
+                    else statusApi.movieProgress(movieId, trackingToken)
                 val body = response.body()
                 response.errorBody()?.close()
+                val latest = state.value ?: return
+                if (latest.result?.movieId != movieId || latest.phase != UploadPhase.PROCESSING) return
+                if (RetrofitClient.account != account) return
+                if (response.code() == 401) {
+                    save(latest.copy(phase = UploadPhase.UNAVAILABLE,
+                        message = "提醒凭证已失效，请重新登录后到我的观影查看结果"))
+                    return
+                }
                 // Do not turn a missing route / task into a successful result.
                 if (response.code() == 404) {
-                    save(current.copy(phase = UploadPhase.UNAVAILABLE,
+                    save(latest.copy(phase = UploadPhase.UNAVAILABLE,
                         message = "无法找到视频任务或查询接口，请检查后端；可移除视频后重新选择"))
                     return
                 }
                 if (!response.isSuccessful || body?.code != 200 || body.data == null) {
                     throw IOException("查询失败（HTTP ${response.code()}）")
                 }
-                val latest = state.value ?: return
-                if (latest.result?.movieId != movieId || latest.phase != UploadPhase.PROCESSING) return
                 val updated = latest.withServerStatus(body.data)
                 save(updated)
                 failures = 0
@@ -123,6 +162,9 @@ class VideoUploadStore private constructor(context: Context, private val account
         }
         val uploadToken = RetrofitClient.token ?: return
         save(session.copy(phase = UploadPhase.UPLOADING, message = "正在上传，可离开此页面，返回后查看结果"))
+        if (!VideoProcessingService.start(appContext)) {
+            android.widget.Toast.makeText(appContext, "后台提醒暂时无法启动，请返回应用查看处理结果", android.widget.Toast.LENGTH_LONG).show()
+        }
         // Application-owned work continues when the upload Activity is finished.
         scope.launch {
             try {
@@ -141,9 +183,10 @@ class VideoUploadStore private constructor(context: Context, private val account
                 val response = RetrofitClient.apiService.uploadVideo(
                     MultipartBody.Part.createFormData("file", session.name, body),
                     RequestBody.create(textType, vocabulary.mode),
-                    if (vocabulary.mode == UploadVocabulary.SELECTED_CET4)
+                    if (vocabulary.isSelected)
                         RequestBody.create(textType, vocabulary.wordIds.joinToString(",", "[", "]")) else null,
-                    "Bearer $uploadToken"
+                    "Bearer $uploadToken",
+                    RequestBody.create(textType, vocabulary.effectiveBookId.toString())
                 )
                 val result = response.body()
                 response.errorBody()?.close()
@@ -171,6 +214,7 @@ class VideoUploadStore private constructor(context: Context, private val account
     }
 
     companion object {
+        internal var statusApi = RetrofitClient.apiService
         private val stores = mutableMapOf<String, VideoUploadStore>()
 
         // Called on the main thread. A returning Activity observes the existing job.

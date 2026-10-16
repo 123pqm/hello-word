@@ -36,7 +36,11 @@ def match_cet4_words(
 ) -> list[dict]:
     """按词出现时间去重；返回首次出现所在句子的播放范围。"""
     vocabulary = load_cet4_vocabulary(database, selected_word_ids)
+    return match_vocabulary(words, vocabulary)
 
+
+def match_vocabulary(words: list[dict], vocabulary: dict[str, str]) -> list[dict]:
+    """复用首次出现和句子时间逻辑，词书只负责提供候选词。"""
     matched = []
     seen = set()
     for item in sorted(words, key=lambda item: item["start"]):

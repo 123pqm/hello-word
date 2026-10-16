@@ -20,6 +20,41 @@ import com.example.helloword.model.MovieWordsResponse
 import retrofit2.http.Header
 import retrofit2.http.Path
 interface ApiService {
+    @GET("wordbooks/{book_id}/search")
+    suspend fun searchWords(@Path("book_id") bookId: Int, @Query("q") query: String,
+        @Query("offset") offset: Int = 0, @Query("limit") limit: Int = 30
+    ): com.example.helloword.model.WordSearchResponse
+
+    @POST("user/logout")
+    suspend fun logout(@Header("Authorization") authorization: String): Response<Unit>
+
+    @GET("video/{movie_id}/progress")
+    suspend fun movieProgress(@Path("movie_id") movieId: Int,
+        @Header("X-Video-Tracking") trackingToken: String): Response<MovieStatusResponse>
+    @retrofit2.http.PUT("favorites/words")
+    suspend fun saveFavorite(@Body body: com.example.helloword.model.FavoriteRequest,
+        @Header("Authorization") authorization: String): Response<com.example.helloword.model.FavoriteResponse>
+
+    @GET("favorites/words/status")
+    suspend fun favoriteStatus(@Query("word") word: String,
+        @Header("Authorization") authorization: String): Response<com.example.helloword.model.FavoriteStatusResponse>
+
+    @retrofit2.http.DELETE("favorites/words")
+    suspend fun deleteFavorite(@Query("word") word: String,
+        @Header("Authorization") authorization: String): Response<Unit>
+
+    @GET("favorites/words")
+    suspend fun favoriteWords(@Header("Authorization") authorization: String,
+        @Query("limit") limit: Int = 30, @Query("before_id") beforeId: Long? = null
+    ): Response<com.example.helloword.model.FavoritesResponse>
+    @retrofit2.http.DELETE("video/{movie_id}")
+    suspend fun deleteMovie(@Path("movie_id") movieId: Int): Response<Unit>
+    @GET("wordbooks/{book_id}/words")
+    suspend fun wordbookWords(
+        @Path("book_id") bookId: Int,
+        @Query("start_index") startIndex: Int,
+        @Query("end_index") endIndex: Int
+    ): Cet4Response
     @POST("user/checkin")
     suspend fun checkin(@Header("Authorization") authorization: String): Response<com.example.helloword.model.CheckinResponse>
 
@@ -61,6 +96,7 @@ interface ApiService {
         @Part file: MultipartBody.Part,
         @Part("selection_mode") selectionMode: RequestBody,
         @Part("selected_word_ids") selectedWordIds: RequestBody?,
-        @Header("Authorization") authorization: String? = null
+        @Header("Authorization") authorization: String? = null,
+        @Part("book_id") bookId: RequestBody? = null
     ): Response<VideoUploadResponse>
 }

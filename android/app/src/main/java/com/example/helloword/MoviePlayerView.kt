@@ -6,6 +6,11 @@ import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.widget.FrameLayout
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.common.PlaybackException
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.example.helloword.R
@@ -19,6 +24,8 @@ class MoviePlayerView @JvmOverloads constructor(
     private var player: ExoPlayer? = null
     private var videoUri: Uri? = null
     private var positionMs = 0L
+    private var requestHeaders: Map<String, String> = emptyMap()
+    var onPlaybackError: (() -> Unit)? = null
 
     init {
         LayoutInflater.from(context)
@@ -31,25 +38,36 @@ class MoviePlayerView @JvmOverloads constructor(
     fun initialize() {
         if (player != null) return
         val uri = videoUri ?: return
-        val newPlayer = ExoPlayer.Builder(context).build()
+        val httpFactory = DefaultHttpDataSource.Factory().setDefaultRequestProperties(requestHeaders)
+        val dataFactory = DefaultDataSource.Factory(context, httpFactory)
+        val newPlayer = ExoPlayer.Builder(context)
+            .setMediaSourceFactory(DefaultMediaSourceFactory(dataFactory)).build()
         player = newPlayer
         playerView.player = newPlayer
+        newPlayer.addListener(object : Player.Listener {
+            override fun onPlayerError(error: PlaybackException) { onPlaybackError?.invoke() }
+        })
         newPlayer.setMediaItem(MediaItem.fromUri(uri), positionMs)
         newPlayer.prepare()
     }
 
-    fun setVideo(uri: Uri) {
+    fun setVideo(uri: Uri, headers: Map<String, String> = emptyMap()) {
+        release()
         videoUri = uri
+        requestHeaders = headers
         positionMs = 0L
-        player?.let {
-            it.pause()
-            it.setMediaItem(MediaItem.fromUri(uri))
-            it.prepare()
-        }
+        if (isAttachedToWindow) initialize()
     }
 
     fun play() {
         player?.play()
+    }
+
+    fun clearVideo() {
+        release()
+        videoUri = null
+        requestHeaders = emptyMap()
+        positionMs = 0L
     }
 
     fun pause() {

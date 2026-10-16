@@ -51,7 +51,6 @@ object FlashcardNavigation {
                 !activity.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
             activity.startActivity(Intent(activity, WordFlashcardActivity::class.java).apply {
                 putExtra(WordFlashcardActivity.EXTRA_MOVIE_ID, movieId)
-                putExtra(WordFlashcardActivity.EXTRA_VIDEO_URI, session.uri)
             })
             store.markFlashcardsOpened(movieId)
         } catch (error: CancellationException) {

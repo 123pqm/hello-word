@@ -79,30 +79,22 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:id="@+id/historyMessage"
-            android:text="按上传时间排列，点击已完成电影查看闪卡"
+            android:text="在列表顶部下拉刷新，点击已完成电影查看闪卡"
             android:textColor="#8A8A8A"
             android:textSize="13sp" />
 
 
-        <!--
-            电影列表
-
-            后面 MovieAdapter 会不断把 item_movie.xml
-            塞到这里面
-        -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/movieRecyclerView"
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/historyRefresh"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_marginTop="18dp"
-            android:layout_weight="1" />
-
-        <Button
-            android:id="@+id/historyLoadMore"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="刷新" />
-
+            android:layout_weight="1">
+            <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent">
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/movieRecyclerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
 
         <!-- 没有电影的时候显示 -->
         <LinearLayout
@@ -130,6 +122,15 @@
                 android:textSize="13sp" />
 
         </LinearLayout>
+            </FrameLayout>
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+        <Button
+            android:id="@+id/historyLoadMore"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:text="加载更多" />
+
 
     </LinearLayout>
 

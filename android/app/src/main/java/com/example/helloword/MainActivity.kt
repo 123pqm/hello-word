@@ -23,7 +23,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         if (RetrofitClient.hasValidSession()) {
-            startActivity(Intent(this, HomeActivity::class.java))
+            startActivity(VideoNotifications.destination(this, intent))
             finish()
             return
         }
@@ -117,13 +117,10 @@ class MainActivity : AppCompatActivity() {
                     showMessage(result.reply ?: "登录成功")
                     accountInput.text.clear()  // 清空账号
                     passwordInput.text.clear() // 清空密码
-                    val intent = Intent(
-                        this@MainActivity,
-                        HomeActivity::class.java
-                    )
+                    val destination = VideoNotifications.destination(this@MainActivity, intent)
 
 // 打开首页
-                    startActivity(intent)
+                    startActivity(destination)
 
 // 结束登录页，按返回键时不会再回到这个登录页
                     finish()

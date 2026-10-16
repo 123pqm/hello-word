@@ -21,6 +21,7 @@
             android:textColor="#1F2329"
             android:textSize="32sp" />
         <TextView
+            android:id="@+id/wordbookTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -45,6 +46,29 @@
             android:importantForAccessibility="no" />
     </LinearLayout>
 
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp" android:layout_marginBottom="12dp"
+        android:gravity="center_vertical" android:background="@drawable/word_search_background">
+        <EditText android:id="@+id/wordbookSearch"
+            android:layout_width="0dp" android:layout_weight="1" android:layout_height="52dp"
+            android:paddingHorizontal="16dp" android:background="@null"
+            android:hint="搜索这本词书的单词" android:contentDescription="搜索这本词书的单词"
+            android:textSize="15sp" android:textColor="#1F2937" android:textColorHint="#8793A3"
+            android:inputType="textNoSuggestions" android:imeOptions="actionSearch"
+            android:maxLines="1" android:singleLine="true" android:maxLength="80" />
+        <TextView android:id="@+id/wordbookSearchClear"
+            android:layout_width="48dp" android:layout_height="48dp" android:gravity="center"
+            android:text="×" android:textSize="24sp" android:textColor="#667085"
+            android:contentDescription="清空搜索" android:focusable="true" android:clickable="true"
+            android:background="?attr/selectableItemBackgroundBorderless" android:visibility="gone" />
+    </LinearLayout>
+
+    <TextView android:id="@+id/wordbookSource"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:minHeight="48dp" android:gravity="center" android:padding="12dp"
+        android:text="词库来源与词频说明 ›" android:textColor="#3478F6"
+        android:background="?attr/selectableItemBackground" android:focusable="true" android:visibility="gone" />
     <ListView
         android:id="@+id/cet4Words"
         android:layout_width="match_parent"
@@ -55,6 +79,9 @@
         android:paddingBottom="12dp"
         android:divider="@android:color/transparent"
         android:dividerHeight="12dp" />
+    <Button android:id="@+id/wordbookUseWhole" android:layout_width="match_parent"
+        android:layout_height="48dp" android:layout_marginHorizontal="20dp"
+        android:text="使用整本词书匹配视频" />
     <ProgressBar
         android:id="@+id/cet4Progress"
         android:layout_width="32dp"

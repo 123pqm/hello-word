@@ -13,7 +13,8 @@ data class VideoData(
     val filename: String,
     val path: String,
     @SerializedName("movie_id") val movieId: Int? = null,
-    val status: String? = null
+    val status: String? = null,
+    @SerializedName("tracking_token") val trackingToken: String? = null
 )
 
 data class MovieStatusResponse(val code: Int, val data: MovieStatus?)

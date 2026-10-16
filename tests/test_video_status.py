@@ -53,6 +53,33 @@ def test_missing_job(status_client):
     assert client.get("/video/17/status").status_code == 404
 
 
+def test_delete_rolls_back_if_second_delete_fails(status_client):
+    client, cursor, database = status_client
+    cursor.fetchone.return_value = {"id": 17}
+    cursor.execute.side_effect = [None, None, RuntimeError("private detail")]
+    response = client.delete("/video/17")
+    assert response.status_code == 503
+    assert "private detail" not in response.text
+    database.rollback.assert_called_once()
+    database.commit.assert_not_called()
+
+
+def test_delete_checks_owner_and_missing_record(status_client):
+    client, cursor, database = status_client
+    cursor.fetchone.return_value = None
+    assert client.delete("/video/17").status_code == 404
+    cursor.execute.assert_called_once_with(
+        "SELECT id FROM movies WHERE id = %s AND user_id = %s FOR UPDATE", (17, 7))
+    database.commit.assert_not_called()
+
+
+def test_delete_requires_authentication(status_client):
+    client, cursor, _ = status_client
+    app.dependency_overrides.pop(get_current_user_id)
+    assert client.delete("/video/17").status_code == 401
+    cursor.execute.assert_not_called()
+
+
 @pytest.mark.parametrize("value", ["0", "-1", "bad"])
 def test_invalid_id(status_client, value):
     client, cursor, _ = status_client

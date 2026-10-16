@@ -80,7 +80,9 @@ def initialize_database() -> None:
         create_words_table(connection)
         create_users_table(connection)
         create_cet4(connection)
+        create_wordbook_tables(connection)
         create_movie_tables(connection)
+        create_favorite_words_table(connection)
         connection.commit()
     finally:
         connection.close()
@@ -94,6 +96,48 @@ def get_database() -> Generator[Connection, None, None]:
         yield connection
     finally:
         connection.close()
+
+def create_wordbook_tables(connection: Connection) -> None:
+    """新增词书独立保存，四级单词 ID 和现有学习记录保持不变。"""
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS wordbook_words (
+                book_id INT NOT NULL,
+                id INT NOT NULL,
+                word VARCHAR(100) NOT NULL,
+                meaning VARCHAR(2000) NOT NULL,
+                pos VARCHAR(32) NULL,
+                frequency INT NOT NULL DEFAULT 0,
+                variants TEXT NULL,
+                category VARCHAR(100) NULL,
+                subcategory VARCHAR(100) NULL,
+                PRIMARY KEY (book_id, id),
+                INDEX idx_wordbook_frequency (book_id, frequency, id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+        """)
+
+
+def create_favorite_words_table(connection: Connection) -> None:
+    """收藏保存独立内容快照；删除来源电影不级联删除收藏。"""
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS favorite_words (
+                id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                word VARCHAR(100) NOT NULL,
+                word_key VARCHAR(200) NOT NULL,
+                meaning VARCHAR(500) NULL,
+                sentence_text TEXT NULL,
+                source_movie_id INT NULL,
+                source_movie_name VARCHAR(255) NULL,
+                start_time DECIMAL(10,2) NULL,
+                end_time DECIMAL(10,2) NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY uq_favorite_user_word (user_id, word_key),
+                INDEX idx_favorite_user_id (user_id, id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+        """)
+
 
 def create_users_table(connection:Connection)->None:
     with connection.cursor() as cursor:

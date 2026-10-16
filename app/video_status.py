@@ -1,5 +1,10 @@
 """Read committed background-job state; querying never restarts a movie job."""
 import logging
+import os
+import time
+import jwt
+from fastapi.security import HTTPAuthorizationCredentials
+from app.auth import bearer, token_fingerprint
 from datetime import datetime
 from typing import Annotated, Literal
 
@@ -8,12 +13,59 @@ from pydantic import BaseModel
 from pymysql.connections import Connection
 from fastapi.responses import FileResponse
 from app.services.movie_cover import get_cover
+from app.services import movie_cover
 
 from app.database import get_database
 from app.auth import get_current_user_id
 
 router = APIRouter(prefix="/video", tags=["视频"])
 logger = logging.getLogger(__name__)
+
+
+@router.delete("/{movie_id}", status_code=204)
+def delete_movie(
+    movie_id: Annotated[int, Path(gt=0)],
+    database: Annotated[Connection, Depends(get_database)],
+    user_id: Annotated[int, Depends(get_current_user_id)],
+):
+    """在同一事务内删除自己的电影和关联闪卡，与后台写入共用电影行锁。"""
+    try:
+        with database.cursor() as cursor:
+            cursor.execute("SELECT id FROM movies WHERE id = %s AND user_id = %s FOR UPDATE", (movie_id, user_id))
+            if cursor.fetchone() is None:
+                raise HTTPException(404, "电影不存在或已删除")
+            cursor.execute("DELETE FROM movie_words WHERE movie_id = %s", (movie_id,))
+            cursor.execute("DELETE FROM movies WHERE id = %s AND user_id = %s", (movie_id, user_id))
+        database.commit()
+    except HTTPException:
+        database.rollback()
+        raise
+    except Exception:
+        database.rollback()
+        logger.exception("删除电影 %s 失败", movie_id)
+        raise HTTPException(503, "删除失败，请稍后重试") from None
+    return Response(status_code=204, headers={"Cache-Control": "no-store"})
+
+
+@router.get("/{movie_id}/file", response_class=FileResponse)
+def get_movie_file(
+    movie_id: Annotated[int, Path(gt=0)],
+    database: Annotated[Connection, Depends(get_database)],
+    user_id: Annotated[int, Depends(get_current_user_id)],
+):
+    """本机文件关联失效时播放已上传的副本，支持播放器的 Range 跳转。"""
+    with database.cursor() as cursor:
+        cursor.execute("SELECT file_path FROM movies WHERE id = %s AND user_id = %s", (movie_id, user_id))
+        movie = cursor.fetchone()
+    if movie is None or not movie["file_path"]:
+        raise HTTPException(404, "视频不存在")
+    # 只允许 uploads/videos 内的视频，兼容旧数据库里的绝对路径。
+    root = movie_cover.VIDEO_DIR.resolve()
+    filename = movie["file_path"].replace("\\", "/").rsplit("/", 1)[-1]
+    video = (root / filename).resolve()
+    if video.parent != root or not video.is_file() or video.suffix.lower() not in {".mp4", ".mov", ".mkv", ".avi"}:
+        raise HTTPException(404, "服务器视频文件已不存在，请重新选择手机原视频")
+    return FileResponse(video, headers={"Cache-Control": "private, no-store"})
 
 
 @router.get("/{movie_id}/cover", response_class=FileResponse)
@@ -181,3 +233,51 @@ def get_movie_status(
     except Exception:
         logger.exception("查询视频 %s 状态失败", movie_id)
         raise HTTPException(status_code=503, detail="暂时无法查询视频状态，请稍后重试") from None
+
+
+# A movie-scoped capability; never put the account's Bearer token in a URL.
+@router.post("/{movie_id}/playback")
+def create_playback(
+    movie_id: Annotated[int, Path(gt=0)],
+    database: Annotated[Connection, Depends(get_database)],
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    credentials: Annotated[HTTPAuthorizationCredentials, Depends(bearer)],
+    response: Response,
+):
+    get_movie_file(movie_id, database, user_id)  # Check ownership and file availability.
+    key = os.environ["JWT_SECRET_KEY"]
+    claims = jwt.decode(credentials.credentials, key, algorithms=["HS256"])
+    expires = min(int(claims["exp"]), int(time.time()) + 1800)
+    ticket = jwt.encode({"sub": str(user_id), "movie_id": movie_id,
+                         "aud": "movie-playback", "exp": expires,
+                         "session": token_fingerprint(credentials.credentials)}, key, algorithm="HS256")
+    response.headers["Cache-Control"] = "no-store"
+    return {"data": {"ticket": ticket, "expires_at": expires}}
+
+
+@router.get("/{movie_id}/stream", response_class=FileResponse)
+def stream_movie(
+    movie_id: Annotated[int, Path(gt=0)],
+    ticket: Annotated[str, Query(max_length=2048)],
+    database: Annotated[Connection, Depends(get_database)],
+):
+    key = os.getenv("JWT_SECRET_KEY", "")
+    if len(key.encode()) < 32:
+        raise HTTPException(503, "登录配置暂不可用")
+    try:
+        claims = jwt.decode(ticket, key, algorithms=["HS256"], audience="movie-playback",
+                            options={"require": ["sub", "exp", "aud", "movie_id", "session"]})
+        user_id = int(claims["sub"])
+        if claims["movie_id"] != movie_id:
+            raise ValueError("wrong movie")
+    except (jwt.InvalidTokenError, ValueError, TypeError):
+        raise HTTPException(401, "播放链接已失效，请重新登录或重新读取视频") from None
+    with database.cursor() as cursor:
+        cursor.execute("""SELECT id FROM users WHERE id = %s AND NOT EXISTS
+            (SELECT 1 FROM revoked_access_tokens WHERE token_hash = %s)""",
+            (user_id, claims["session"]))
+        if cursor.fetchone() is None:
+            raise HTTPException(401, "播放链接已失效")
+    result = get_movie_file(movie_id, database, user_id)
+    result.headers["Referrer-Policy"] = "no-referrer"
+    return result

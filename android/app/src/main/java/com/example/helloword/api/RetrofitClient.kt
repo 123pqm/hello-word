@@ -14,7 +14,10 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
-    private const val BASE_URL = "http://172.20.10.2:8000/"
+    // 本地开发：电脑启动 FastAPI :8000，并执行 adb reverse tcp:8000 tcp:8000。
+    private const val BASE_URL = "http://127.0.0.1:8000/"
+
+    fun moviePlaybackUrl(movieId: Int): String = BASE_URL + "video/$movieId/file"
 
     private lateinit var preferences: SharedPreferences
     private lateinit var appContext: Context
@@ -51,6 +54,10 @@ object RetrofitClient {
         val seconds = requireNotNull(result.expiresIn)
         require(id > 0 && value.isNotBlank() && name.isNotBlank() && seconds > 0)
         val expiry = System.currentTimeMillis() + seconds.toLong() * 1000
+        if (userId != id && ::appContext.isInitialized) {
+            appContext.stopService(Intent(appContext, com.example.helloword.VideoProcessingService::class.java))
+            com.example.helloword.VideoNotifications.clearResults(appContext)
+        }
         check(preferences.edit().putInt("user_id", id).putString("account", name)
             .putString("access_token", value).putLong("expires_at", expiry).commit()) {
             "无法保存登录状态，请检查手机存储空间"
@@ -63,6 +70,10 @@ object RetrofitClient {
 
     @Synchronized
     fun clearSession() {
+        if (::appContext.isInitialized) {
+            appContext.stopService(Intent(appContext, com.example.helloword.VideoProcessingService::class.java))
+            com.example.helloword.VideoNotifications.clearResults(appContext)
+        }
         token = null
         account = null
         userId = null
@@ -89,10 +100,11 @@ object RetrofitClient {
                 // ① 请求拦截：类似 axios.interceptors.request
                 val builder = chain.request()
                     .newBuilder()
-                    .header("Accept", "application/json")
+                    .header("Accept", chain.request().header("Accept") ?: "application/json")
 
                 val currentToken = token
-                if (!currentToken.isNullOrBlank() && chain.request().header("Authorization") == null) {
+                if (!currentToken.isNullOrBlank() && chain.request().header("Authorization") == null &&
+                    chain.request().header("X-Video-Tracking") == null) {
                     // 请求头格式要和你的后端保持一致
                     builder.header(
                         "Authorization",
@@ -132,4 +144,21 @@ object RetrofitClient {
             .build()
             .create(ApiService::class.java)
     }
+
+    private val chatClient: OkHttpClient by lazy {
+        httpClient.newBuilder()
+            // 比后端的 120 秒读取 / 180 秒总超时多留余量，以接收后端错误事件。
+            .readTimeout(130, java.util.concurrent.TimeUnit.SECONDS)
+            .callTimeout(195, java.util.concurrent.TimeUnit.SECONDS)
+            .retryOnConnectionFailure(false)
+            .build()
+    }
+
+    fun newChatCall(json: String): okhttp3.Call = chatClient.newCall(
+        okhttp3.Request.Builder()
+            .url(BASE_URL + "ai/chat/stream")
+            .header("Accept", "text/event-stream")
+            .post(okhttp3.RequestBody.create(okhttp3.MediaType.parse("application/json; charset=utf-8"), json))
+            .build()
+    )
 }

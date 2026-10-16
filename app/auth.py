@@ -1,5 +1,6 @@
 """从经过验证的 Bearer token 取得用户，不能信任客户端提交的 user_id。"""
 import os
+import hashlib
 from typing import Annotated
 
 import jwt
@@ -10,6 +11,11 @@ from pymysql.connections import Connection
 from app.database import get_database
 
 bearer = HTTPBearer(auto_error=False)
+
+
+def token_fingerprint(token: str) -> str:
+    # 对签名覆盖的内容取摘要，避免签名 base64 的等价编码绕过撤销。
+    return hashlib.sha256(token.rsplit('.', 1)[0].encode('ascii')).hexdigest()
 
 
 def get_current_user_id(
@@ -37,7 +43,9 @@ def get_current_user_id(
     except (jwt.InvalidTokenError, ValueError, TypeError):
         raise unauthorized from None
     with database.cursor() as cursor:
-        cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
+        cursor.execute("""SELECT id FROM users WHERE id = %s AND NOT EXISTS
+            (SELECT 1 FROM revoked_access_tokens WHERE token_hash = %s)""",
+            (user_id, token_fingerprint(credentials.credentials)))
         if cursor.fetchone() is None:
             raise unauthorized
     return user_id

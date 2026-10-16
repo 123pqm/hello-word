@@ -76,7 +76,8 @@ def test_login_returns_signed_token(login_client, jwt_key, password_hash):
     assert claims["sub"] == "7"
     assert before <= claims["iat"] <= int(datetime.now(timezone.utc).timestamp())
     assert claims["exp"] - claims["iat"] == TOKEN_EXPIRE_SECONDS
-    assert set(claims) == {"sub", "iat", "exp"}
+    assert set(claims) == {"sub", "iat", "exp", "jti"}
+    assert isinstance(claims["jti"], str) and len(claims["jti"]) == 32
     assert TEST_PASSWORD not in response.text
     assert password_hash not in response.text
     assert response.headers["cache-control"] == "no-store"

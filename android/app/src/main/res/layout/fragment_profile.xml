@@ -108,12 +108,7 @@
                     style="@style/ProfileSwitch"
                     android:text="显示例句"
                     android:checked="true" />
-                <View style="@style/ProfileDivider" />
-                <androidx.appcompat.widget.SwitchCompat
-                    android:id="@+id/profileShowTranslation"
-                    style="@style/ProfileSwitch"
-                    android:text="显示例句释义"
-                    android:checked="false" />
+
             </LinearLayout>
 
             <LinearLayout style="@style/ProfileCard">
@@ -166,6 +161,17 @@
                     <ImageView style="@style/ProfileChevron" />
                 </LinearLayout>
             </LinearLayout>
+            <Button
+                android:id="@+id/profileLogout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="52dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="12dp"
+                android:text="退出登录"
+                android:textSize="16sp"
+                android:textColor="#C43838"
+                android:backgroundTint="#FCEAEA" />
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

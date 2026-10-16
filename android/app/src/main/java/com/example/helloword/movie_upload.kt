@@ -35,6 +35,10 @@ class movie_upload : AppCompatActivity() {
     private lateinit var incomingVocabulary: UploadVocabulary
     private var renderedUri: String? = null
     private var openingFlashcards = false
+    private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (!granted) Toast.makeText(this, "未允许通知，处理完成后请回到应用查看结果", Toast.LENGTH_LONG).show()
+        if (::store.isInitialized) store.upload()
+    }
 
     private val videoPicker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null && ::store.isInitialized) {
@@ -65,8 +69,12 @@ class movie_upload : AppCompatActivity() {
         incomingVocabulary = try {
             UploadVocabulary.fromParent(
                 intent.getStringExtra(UploadVocabulary.EXTRA_SOURCE),
-                intent.getIntArrayExtra(UploadVocabulary.EXTRA_WORD_IDS)
-            )
+                intent.getIntArrayExtra(UploadVocabulary.EXTRA_WORD_IDS),
+                intent.getIntExtra(UploadVocabulary.EXTRA_BOOK_ID, 1)
+            ).also { vocabulary ->
+                // 新进入页面代表新的选书操作；旋转重建不能用旧 Intent 覆盖最新草稿。
+                if (savedInstanceState == null) store.updateDraftVocabulary(vocabulary)
+            }
         } catch (error: IllegalArgumentException) {
             store.state.value?.vocabulary ?: run {
                 Toast.makeText(this, error.message, Toast.LENGTH_LONG).show()
@@ -90,7 +98,18 @@ class movie_upload : AppCompatActivity() {
             val session = store.state.value
             if (session?.phase == UploadPhase.COMPLETED) {
                 lifecycleScope.launch { openFlashcards(session) }
-            } else store.upload()
+            } else if (session?.canUpload == true) {
+                if (android.os.Build.VERSION.SDK_INT >= 33 &&
+                    androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) !=
+                    android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    notificationPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                } else {
+                    if (!androidx.core.app.NotificationManagerCompat.from(this).areNotificationsEnabled()) {
+                        Toast.makeText(this, "系统通知已关闭，处理完成后请回到应用查看结果", Toast.LENGTH_LONG).show()
+                    }
+                    store.upload()
+                }
+            }
         }
         findViewById<View>(R.id.btnBack).setOnClickListener { finish() }
         render(store.state.value)
@@ -101,6 +120,7 @@ class movie_upload : AppCompatActivity() {
             }
         }
         FlashcardNavigation.bind(this, store, ::showFlashcardLoading, ::showFlashcardError)
+        if (store.state.value?.isBusy == true) VideoProcessingService.start(this)
     }
 
     private suspend fun openFlashcards(session: UploadSession) {

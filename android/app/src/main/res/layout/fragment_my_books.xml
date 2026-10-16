@@ -34,7 +34,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="当前词书"
+                android:text="可选词书"
                 android:textColor="#303641"
                 android:textSize="16sp"
                 android:textStyle="bold"
@@ -63,6 +63,8 @@
                     android:layout_marginEnd="16dp"
                     android:background="#F0F1F4" />
                 <include android:id="@+id/myBookGraduate" layout="@layout/item_my_wordbook" />
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F0F1F4" />
+                <include android:id="@+id/myBookGraduateHigh" layout="@layout/item_my_wordbook" />
             </LinearLayout>
 
             <LinearLayout

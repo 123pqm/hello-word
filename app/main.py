@@ -12,13 +12,20 @@ from fastapi import BackgroundTasks, Form
 from pymysql import IntegrityError
 from pymysql.connections import Connection
 from starlette.concurrency import run_in_threadpool
-from pathlib import Path
+from pathlib import Path as FilePath
 
 from app.database import get_database, initialize_database
+from app.ai import router as ai_router
+from app.favorites import router as favorites_router
+from app.video_tracking import create_tracking_token, router as video_tracking_router
 from app.auth import get_current_user_id
+from app.logout import router as logout_router, initialize_logout_storage
 from app.checkin import checkin_status, router as checkin_router
 from app.tasks.movie_task import process_movie
 from app.services.cet4_service import load_cet4_vocabulary
+from app.services.wordbook_service import load_wordbook_vocabulary, validate_book
+from app.wordbooks import router as wordbooks_router
+from app.profile import router as profile_router, save_wordbook
 from app.schemas import Cet4WordResponse
 from app.schemas import WordCreate, WordListResponse, WordResponse,account_resign,resign_response,login_response,account_login,chose_book_response,book_detail,cet_4_response
 from pwdlib import PasswordHash
@@ -52,6 +59,7 @@ def create_access_token(user_id: int) -> str:
     """我们自己写的函数：调用 PyJWT 签发 30 分钟有效的登录凭证。"""
     now = datetime.now(timezone.utc)
     token_data = {
+        "jti": uuid.uuid4().hex,
         "sub": str(user_id),  # 用户 ID 必须转成字符串，不放密码或密码哈希。
         "iat": now,
         "exp": now + timedelta(seconds=TOKEN_EXPIRE_SECONDS),
@@ -66,6 +74,7 @@ async def lifespan(app: FastAPI):
     # 真正启动服务时才连接 MySQL，导入模块、查看代码不触发建库。
     # PyMySQL 是同步驱动，所以把初始化放在线程池中运行。
     await run_in_threadpool(initialize_database)
+    await run_in_threadpool(initialize_logout_storage)
     yield
 
 
@@ -318,37 +327,13 @@ def login(
 def chose_book(
     payload:book_detail,
     database:Annotated[Connection,Depends(get_database)],
-    authorization: str = Header()
+    user_id: Annotated[int, Depends(get_current_user_id)]
 )->chose_book_response:
-   id=payload.id.strip()
-   book_id=playload.book_id.strip()
+   if payload.id != user_id:
+       raise HTTPException(403, "不能修改其他用户的词书")
+   save_wordbook(database, user_id, payload.book_id)
+   return chose_book_response(reply="成功更改单词书")
 
-   if not id or not book_id:
-    raise HTTPException(
-        status_code=422,
-        detail="单词书不存在"
-    )
-
-    try:
-        with database.cursor() as cursor:
-            cursor.execute(
-                """
-                UPDATE users
-                SET book_id = %s
-                WHERE id = %s;
-                """,
-                (book_id,id)
-            )
-            database.commit()
-    except IntegrityError as error:
-        database.rollback()
-        raise HTTPException(
-            status_code=409,
-            detail="网络请求失败"
-        ) from error
-    return chose_book_response(
-        reply="成功更改单词书"
-    )
 
 @app.get(
     "/user/chose/cet4",
@@ -412,11 +397,21 @@ def cet4_detail(
 router = APIRouter(prefix="/video", tags=["视频"])
 
 # 视频保存目录
-UPLOAD_DIR = Path(__file__).resolve().parent.parent / "uploads" / "videos"
+UPLOAD_DIR = FilePath(__file__).resolve().parent.parent / "uploads" / "videos"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
-@router.post("/upload")
+@router.post(
+    "/web/upload",
+    summary="网页上传视频",
+    description=(
+        "网页使用 multipart/form-data 上传用户选择的视频文件，不接收本地文件路径。"
+        "需要 Authorization 登录凭证；参数、返回结构和处理流程与 /video/upload 相同。"
+        "上传返回 pending 后，用 /video/{movie_id}/status 查询处理状态，"
+        "完成后用 /video/{movie_id}/words 读取结果。"
+    ),
+)
+@router.post("/upload", summary="通用视频上传（兼容 Android）")
 def upload_video(
     background_tasks: BackgroundTasks,
     database: Annotated[Connection, Depends(get_database)],
@@ -424,12 +419,19 @@ def upload_video(
     file: UploadFile = File(...),
     selection_mode: str = Form("all_cet4"),
     selected_word_ids: str | None = Form(None),
+    book_id: int = Form(1),
 ):
     # 旧客户端未传范围时仍使用整本四级词库；自选模式必须提供有效 ID。
     matching_ids = None
-    if selection_mode not in {"all_cet4", "selected_cet4"}:
+    try:
+        validate_book(book_id)
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from error
+    if selection_mode in {"all_cet4", "selected_cet4"} and book_id != 1:
+        raise HTTPException(422, "四级匹配模式与所选词书不一致")
+    if selection_mode not in {"all_cet4", "selected_cet4", "all_book", "selected_book"}:
         raise HTTPException(status_code=422, detail="不支持的词汇匹配范围")
-    if selection_mode == "selected_cet4":
+    if selection_mode in {"selected_cet4", "selected_book"}:
         try:
             matching_ids = json.loads(selected_word_ids or "null")
             if (
@@ -437,14 +439,19 @@ def upload_video(
                 or not 1 <= len(matching_ids) <= 10000
                 or any(type(word_id) is not int or not 0 < word_id <= 2147483647 for word_id in matching_ids)
             ):
-                raise ValueError("请传入非空的四级单词 ID 数组")
+                raise ValueError("请传入非空的单词 ID 数组")
             matching_ids = list(dict.fromkeys(matching_ids))
             # 保存视频和启动 Whisper 之前校验，避免选错范围仍耗时识别。
-            load_cet4_vocabulary(database, matching_ids)
+            load_wordbook_vocabulary(database, book_id, matching_ids)
         except ValueError as error:
             raise HTTPException(status_code=422, detail=str(error)) from error
     elif selected_word_ids is not None:
         raise HTTPException(status_code=422, detail="整本词库模式无需传入单词 ID")
+    elif selection_mode == "all_book":
+        try:
+            load_wordbook_vocabulary(database, book_id)
+        except ValueError as error:
+            raise HTTPException(422, str(error)) from error
 
     # 1. 判断是不是视频
     if not file.content_type or not file.content_type.startswith("video/"):
@@ -454,7 +461,7 @@ def upload_video(
         )
 
     # 2. 获取后缀，比如 .mp4
-    suffix = Path(file.filename or "").suffix.lower()
+    suffix = FilePath(file.filename or "").suffix.lower()
 
     if suffix not in [".mp4", ".mov", ".mkv", ".avi"]:
         raise HTTPException(
@@ -496,7 +503,7 @@ def upload_video(
         file.file.close()
 
     # 仅传递 ID 和路径，不把请求连接或 UploadFile 交给后台。
-    background_tasks.add_task(process_movie, movie_id, str(file_path.resolve()), matching_ids)
+    background_tasks.add_task(process_movie, movie_id, str(file_path.resolve()), matching_ids, book_id)
 
     # 5. 返回结果
     return {
@@ -504,6 +511,7 @@ def upload_video(
         "message": "上传成功",
         "data": {
             "movie_id": movie_id,
+            "tracking_token": create_tracking_token(user_id, movie_id),
             "status": "pending",
             "originalFilename": file.filename,
             "filename": new_filename,
@@ -514,3 +522,10 @@ app.include_router(router)
 from app.video_status import router as video_status_router
 app.include_router(video_status_router)
 app.include_router(checkin_router)
+app.include_router(ai_router)
+app.include_router(favorites_router)
+app.include_router(video_tracking_router)
+app.include_router(wordbooks_router)
+app.include_router(logout_router)
+
+app.include_router(profile_router)

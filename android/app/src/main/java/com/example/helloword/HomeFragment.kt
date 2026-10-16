@@ -4,8 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
-import android.media.MediaMetadataRetriever
-import android.net.Uri
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -16,19 +14,23 @@ import android.widget.Toast
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.appcompat.app.AppCompatActivity
 import com.example.helloword.api.RetrofitClient
-import com.example.helloword.model.UploadPhase
-import com.example.helloword.model.UploadVocabulary
-import kotlinx.coroutines.Dispatchers
+import com.example.helloword.model.MovieHistoryItem
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.util.Locale
 
 class HomeFragment : Fragment(R.layout.view_home) {
+    companion object { internal var apiService = RetrofitClient.apiService }
+    private val refreshRequests = MutableStateFlow(0)
+    private var recentMovie: MovieHistoryItem? = null
+    private var recentOwner: Int? = null
+    private var canRetry = false
+    private var coverJob: Job? = null
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val calendar = view.findViewById<LinearLayout>(R.id.homeCheckinDays)
@@ -45,82 +47,129 @@ class HomeFragment : Fragment(R.layout.view_home) {
         view.findViewById<View>(R.id.homeNewTask).setOnClickListener {
             startActivity(Intent(requireContext(), select_book::class.java))
         }
-        // Hydrate the global state from the existing account-scoped persistent upload session.
-        RetrofitClient.account?.let { VideoUploadStore.forAccount(requireContext(), it) }
+        showRecentMessage(view, "正在加载最近学习…", "正在查询电影历史")
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch { CheckinStore.state.collect { renderCheckin(view, it) } }
-                launch { LearningStore.recentMovie.collect { renderRecent(view, it) } }
-                launch {
-                    LearningStore.recentMovie.map { it?.uri }.distinctUntilChanged().collectLatest { uri ->
-                        val cover = view.findViewById<ImageView>(R.id.homeRecentCover)
-                        cover.setImageResource(android.R.drawable.ic_menu_gallery)
-                        if (!uri.isNullOrBlank()) {
-                            val appContext = requireContext().applicationContext
-                            val bitmap = withContext(Dispatchers.IO) {
-                                val retriever = MediaMetadataRetriever()
-                                try {
-                                    retriever.setDataSource(appContext, Uri.parse(uri))
-                                    if (android.os.Build.VERSION.SDK_INT >= 27) {
-                                        retriever.getScaledFrameAtTime(1_000_000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC, 200, 264)
-                                    } else retriever.getFrameAtTime(1_000_000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
-                                } catch (_: Exception) { null }
-                                finally { retriever.release() }
-                            }
-                            if (bitmap != null) cover.setImageBitmap(bitmap)
-                        }
+                CheckinStore.state.collect { renderCheckin(view, it) }
+            }
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            // 每次回到首页重新查询；留在首页时也能发现处理完成、删除或其他设备的新上传。
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                try {
+                    refreshRequests.collectLatest {
+                        showRecentMessage(view, "正在加载最近学习…", "正在查询电影历史")
+                        while (true) delay(refreshRecent(view))
                     }
+                } finally {
+                    coverJob?.cancel()
                 }
             }
         }
         view.findViewById<View>(R.id.homeRecentLesson).setOnClickListener {
-            val account = RetrofitClient.account ?: return@setOnClickListener
-            val store = VideoUploadStore.forAccount(requireContext(), account)
-            val session = store.state.value ?: return@setOnClickListener
-            val movieId = session.result?.movieId
-            if (session.phase == UploadPhase.COMPLETED && movieId != null) {
-                viewLifecycleOwner.lifecycleScope.launch {
-                    FlashcardNavigation.open(requireActivity() as AppCompatActivity, store, movieId,
-                        onError = { Toast.makeText(context, it, Toast.LENGTH_LONG).show() })
+            if (canRetry) {
+                refreshRequests.value++
+                return@setOnClickListener
+            }
+            val movie = recentMovie ?: return@setOnClickListener
+            if (recentOwner != RetrofitClient.userId) {
+                showRecentMessage(view, "正在加载最近学习…", "正在查询电影历史")
+                refreshRequests.value++
+                return@setOnClickListener
+            }
+            when (movie.status) {
+                "completed" -> startActivity(Intent(requireContext(), WordFlashcardActivity::class.java)
+                    .putExtra(WordFlashcardActivity.EXTRA_MOVIE_ID, movie.id))
+                "pending", "processing" -> {
+                    Toast.makeText(context, "电影仍在处理中，完成后可查看闪卡", Toast.LENGTH_SHORT).show()
+                    refreshRequests.value++
                 }
-            } else {
-                startActivity(Intent(requireContext(), movie_upload::class.java).apply {
-                    val vocabulary = session.vocabulary
-                    putExtra(UploadVocabulary.EXTRA_SOURCE,
-                        if (vocabulary.mode == UploadVocabulary.ALL_CET4) UploadVocabulary.SOURCE_BOOK else UploadVocabulary.SOURCE_WORDS)
-                    putExtra(UploadVocabulary.EXTRA_WORD_IDS, vocabulary.wordIds.toIntArray())
-                })
+                else -> startActivity(Intent(requireContext(), MyMoviesActivity::class.java))
             }
         }
     }
 
-    private fun renderRecent(view: View, movie: MovieInfo?) {
-        view.findViewById<View>(R.id.homeRecentLesson).isEnabled = movie != null
-        view.findViewById<TextView>(R.id.homeRecentTitle).text = movie?.name ?: "暂无最近学习"
-        view.findViewById<TextView>(R.id.homeRecentDetails).text = movie?.let {
-            val size = when {
-                it.size <= 0 -> "未知大小"
-                it.size >= 1024L * 1024 * 1024 -> String.format(Locale.getDefault(), "%.2f GB", it.size / (1024.0 * 1024 * 1024))
-                else -> String.format(Locale.getDefault(), "%.1f MB", it.size / (1024.0 * 1024))
+    private suspend fun refreshRecent(view: View): Long {
+        val owner = RetrofitClient.userId
+        val token = RetrofitClient.token
+        if (owner == null || token.isNullOrBlank()) {
+            showRecentMessage(view, "请登录后查看最近学习", "电影历史按账号保存")
+            return 30_000L
+        }
+        try {
+            val response = apiService.movieHistory(limit = 1)
+            response.errorBody()?.close()
+            if (owner != RetrofitClient.userId || token != RetrofitClient.token) {
+                showRecentMessage(view, "正在加载最近学习…", "正在查询电影历史")
+                return 1_000L
             }
-            "${it.duration} · $size"
-        } ?: "选择视频后，这里会显示电影信息"
-        val busy = movie?.phase == UploadPhase.UPLOADING || movie?.phase == UploadPhase.PROCESSING
+            val body = response.body()
+            if (response.code() == 401) {
+                showRecentMessage(view, "登录已失效", "请重新登录后查看电影历史")
+                return 30_000L
+            }
+            if (!response.isSuccessful || body?.code != 200 || body.data == null) {
+                throw IllegalStateException("无法读取电影历史")
+            }
+            val movie = body.data.items.firstOrNull()
+            val changed = recentOwner != owner || recentMovie?.id != movie?.id
+            recentOwner = owner
+            recentMovie = movie
+            canRetry = false
+            renderRecent(view, movie)
+            if (changed) {
+                coverJob?.cancel()
+                view.findViewById<ImageView>(R.id.homeRecentCover).setImageResource(android.R.drawable.ic_menu_gallery)
+                if (movie != null) coverJob = viewLifecycleOwner.lifecycleScope.launch {
+                    try {
+                        val bitmap = MovieCoverRepository.load(movie.id, owner)
+                        if (bitmap != null && owner == RetrofitClient.userId && recentOwner == owner &&
+                            recentMovie?.id == movie.id) view.findViewById<ImageView>(R.id.homeRecentCover).setImageBitmap(bitmap)
+                    } catch (error: CancellationException) {
+                        throw error
+                    } catch (_: Exception) { /* 封面失败保留占位图，不影响电影信息。 */ }
+                }
+            }
+            return if (movie?.status in setOf("pending", "processing")) 3_000L else 30_000L
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Exception) {
+            showRecentMessage(view, "最近学习加载失败", "点击重试，或稍后自动刷新", retry = true)
+            return 10_000L
+        }
+    }
+
+    private fun showRecentMessage(view: View, title: String, detail: String, retry: Boolean = false) {
+        coverJob?.cancel()
+        recentMovie = null
+        recentOwner = null
+        canRetry = retry
+        view.findViewById<View>(R.id.homeRecentLesson).isEnabled = retry
+        view.findViewById<TextView>(R.id.homeRecentTitle).text = title
+        view.findViewById<TextView>(R.id.homeRecentDetails).text = detail
+        view.findViewById<TextView>(R.id.homeLessonProgressLabel).text = if (retry) "点击重试" else ""
+        view.findViewById<ProgressBar>(R.id.homeLessonProgress).visibility = View.GONE
+        view.findViewById<ImageView>(R.id.homeRecentCover).setImageResource(android.R.drawable.ic_menu_gallery)
+    }
+
+    private fun renderRecent(view: View, movie: MovieHistoryItem?) {
+        view.findViewById<View>(R.id.homeRecentLesson).isEnabled = movie != null
+        view.findViewById<TextView>(R.id.homeRecentTitle).text = if (movie == null) "暂无最近学习" else movie.fileName ?: "未命名电影"
+        view.findViewById<TextView>(R.id.homeRecentDetails).text = if (movie == null) "上传电影后，这里会显示最新记录"
+            else movie.createdAt?.replace('T', ' ')?.let { "上传于 $it" } ?: "上传时间未知"
+        val busy = movie?.status in setOf("pending", "processing")
         view.findViewById<ProgressBar>(R.id.homeLessonProgress).apply {
             visibility = if (movie == null) View.GONE else View.VISIBLE
             isIndeterminate = busy
-            progress = if (movie?.phase == UploadPhase.COMPLETED) 100 else 0
+            progress = if (movie?.status == "completed") 100 else 0
         }
-        view.findViewById<TextView>(R.id.homeLessonProgressLabel).text = when (movie?.phase) {
-            null -> ""
-            UploadPhase.READY -> "待上传"
-            UploadPhase.UPLOADING -> "上传中"
-            UploadPhase.PROCESSING -> "分析中"
-            UploadPhase.COMPLETED -> "查看闪卡"
-            UploadPhase.SUCCEEDED -> "已上传"
-            UploadPhase.FAILED, UploadPhase.PROCESS_FAILED -> "失败，点击重试"
-            UploadPhase.INTERRUPTED -> "上传中断"
-            UploadPhase.UNAVAILABLE -> "任务不可用"
+        view.findViewById<TextView>(R.id.homeLessonProgressLabel).text = when {
+            movie == null -> ""
+            movie.status == "pending" -> "等待分析"
+            movie.status == "processing" -> "分析中"
+            movie.status == "completed" -> "查看闪卡"
+            movie.status == "failed" -> "分析失败 · 查看历史"
+            else -> "状态未知 · 查看历史"
         }
     }
 

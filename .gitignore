@@ -11,3 +11,13 @@ uploads/
 media/
 models/
 data/
+
+# Local test runs and generated deployment bundles
+.pytest-tmp*/
+*.log
+/deploy/*.tar.gz
+/deploy/*-tests.txt
+
+# Environment-specific secrets (keep the shareable template)
+.env.*
+!.env.example

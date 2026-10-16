@@ -7,6 +7,7 @@ import pytest
 
 from app.database import connect_database, create_words_table, get_database
 from app.main import app
+from app.logout import create_revocations_table
 
 
 SEED_WORDS = [
@@ -41,6 +42,7 @@ def mysql_test_database():
         created = True
         connection.select_db(name)
         create_words_table(connection)
+        create_revocations_table(connection)
         yield name
     finally:
         if created:

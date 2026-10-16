@@ -3,6 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <application
         android:name=".HelloWordApplication"
@@ -15,7 +18,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.HelloWord"
         android:usesCleartextTraffic="true">
+        <service android:name=".VideoProcessingService" android:exported="false"
+            android:foregroundServiceType="dataSync" android:stopWithTask="false" />
         <activity android:name=".MyMoviesActivity" android:exported="false" />
+        <activity android:name=".FavoritesActivity" android:exported="false" />
         <activity android:name=".AiAssistantActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".MainActivity"

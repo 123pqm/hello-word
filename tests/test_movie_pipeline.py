@@ -55,6 +55,10 @@ def test_upload_to_flashcards_with_real_database(pipeline, monkeypatch):
     )
     assert uploaded.status_code == 200, uploaded.text
     movie_id = uploaded.json()["data"]["movie_id"]
+    tracking_token = uploaded.json()["data"]["tracking_token"]
+    tracked = client.get(f"/video/{movie_id}/progress", headers={"Authorization": "", "X-Video-Tracking": tracking_token})
+    assert tracked.status_code == 200
+    assert tracked.json()["data"]["status"] == "completed"
     database = connect_database()
     try:
         with database.cursor() as cursor:
@@ -95,6 +99,49 @@ def test_analysis_failure_is_visible_without_flashcards(pipeline, monkeypatch):
     assert status["status"] == "failed"
     assert status["matched_word_count"] == 0
     assert client.get(f"/video/{movie_id}/words").status_code == 409
+
+
+@pytest.mark.mysql
+def test_delete_removes_movie_and_words_only_for_owner(pipeline, monkeypatch):
+    client, word, _, _ = pipeline
+    monkeypatch.setattr(movie_task, "transcribe_movie", lambda _: [
+        {"word": word, "start": 1, "end": 2, "sentence_text": f"A {word}."}])
+    movie_id = client.post("/video/upload", files={"file": ("delete.mp4", b"video", "video/mp4")}).json()["data"]["movie_id"]
+    assert len(client.get(f"/video/{movie_id}/words").json()["data"]["words"]) == 1
+    other = {"account": "d" + uuid4().hex[:12], "password": "DemoPass123!"}
+    assert client.post("/user/sign", json=other).status_code == 201
+    other_token = client.post("/user/login", json=other).json()["access_token"]
+    assert client.delete(f"/video/{movie_id}", headers={"Authorization": "Bearer " + other_token}).status_code == 404
+    assert client.get(f"/video/{movie_id}/words").status_code == 200
+    assert client.delete(f"/video/{movie_id}").status_code == 204
+    assert client.delete(f"/video/{movie_id}").status_code == 404
+    assert client.get(f"/video/{movie_id}/words").status_code == 404
+    assert movie_id not in [row["id"] for row in client.get("/video/history").json()["data"]["items"]]
+    with connect_database() as db:
+        with db.cursor() as cursor:
+            for table in ("movies", "movie_words"):
+                column = "id" if table == "movies" else "movie_id"
+                cursor.execute(f"SELECT COUNT(*) AS total FROM {table} WHERE {column} = %s", (movie_id,))
+                assert cursor.fetchone()["total"] == 0
+
+
+@pytest.mark.mysql
+def test_delete_during_transcription_cannot_recreate_words(pipeline, monkeypatch):
+    client, word, _, _ = pipeline
+    monkeypatch.setattr(main, "process_movie", lambda *args: None)
+    movie_id = client.post("/video/upload", files={"file": ("running.mp4", b"video", "video/mp4")}).json()["data"]["movie_id"]
+
+    def transcribe(_):
+        assert client.delete(f"/video/{movie_id}").status_code == 204
+        return [{"word": word, "start": 1, "end": 2, "sentence_text": f"A {word}."}]
+
+    monkeypatch.setattr(movie_task, "transcribe_movie", transcribe)
+    movie_task.process_movie(movie_id, "running.mp4")
+    with connect_database() as db:
+        with db.cursor() as cursor:
+            cursor.execute("SELECT COUNT(*) AS total FROM movie_words WHERE movie_id = %s", (movie_id,))
+            assert cursor.fetchone()["total"] == 0
+    assert client.get(f"/video/{movie_id}/status").status_code == 404
 
 
 @pytest.mark.mysql

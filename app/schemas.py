@@ -1,6 +1,8 @@
 """接口返回数据的结构。"""
 
-from pydantic import BaseModel, Field
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class WordResponse(BaseModel):
@@ -64,3 +66,57 @@ class Cet4WordResponse(BaseModel):
 
 class cet_4_response(BaseModel):
     data: list[Cet4WordResponse]
+
+
+class WordbookWordResponse(Cet4WordResponse):
+    frequency: int | None = None
+
+
+class WordbookWordListResponse(BaseModel):
+    data: list[WordbookWordResponse]
+    total: int
+    book: dict
+
+
+class ExplainWordRequest(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    word: str = Field(min_length=1, max_length=100)
+    sentence: str = Field(min_length=1, max_length=4000)
+    previous_sentence: str = Field(default="", max_length=4000)
+    next_sentence: str = Field(default="", max_length=4000)
+
+
+class ExplainWordResponse(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, strict=True)
+
+    word: str = Field(min_length=1)
+    basic_meaning: str = Field(min_length=1)
+    context_meaning: str = Field(min_length=1)
+    sentence_translation: str = Field(min_length=1)
+    part_of_speech: str = Field(min_length=1)
+    usage: str = Field(min_length=1)
+    collocations: list[str]
+    example: str = Field(min_length=1)
+    example_translation: str = Field(min_length=1)
+
+
+class ChatMessage(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=8000)
+
+
+class ChatRequest(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+    messages: list[ChatMessage] = Field(min_length=1, max_length=21)
+    word: str = Field(default="", max_length=100)
+    sentence: str = Field(default="", max_length=4000)
+
+    @model_validator(mode="after")
+    def validate_conversation(self):
+        if self.messages[-1].role != "user":
+            raise ValueError("最后一条消息必须是用户问题")
+        if sum(len(message.content) for message in self.messages) > 32000:
+            raise ValueError("对话内容过长，请开始新对话")
+        return self

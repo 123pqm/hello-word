@@ -10,6 +10,8 @@ import android.widget.TextView
 import android.widget.Toast
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AlertDialog
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
@@ -21,8 +23,11 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class MyMoviesActivity : AppCompatActivity() {
+    companion object { internal var apiService = RetrofitClient.apiService }
     private lateinit var list: RecyclerView
     private lateinit var empty: View
     private lateinit var message: TextView
@@ -31,6 +36,8 @@ class MyMoviesActivity : AppCompatActivity() {
     private lateinit var adapter: MovieHistoryAdapter
     private var nextId: Int? = null
     private var loading = false
+    private var deleting = false
+    private lateinit var refreshLayout: SwipeRefreshLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,10 +53,14 @@ class MyMoviesActivity : AppCompatActivity() {
         empty = findViewById(R.id.emptyView)
         message = findViewById(R.id.historyMessage)
         more = findViewById(R.id.historyLoadMore)
-        adapter = MovieHistoryAdapter(rows, lifecycleScope, ::openMovie)
+        refreshLayout = findViewById(R.id.historyRefresh)
+        refreshLayout.setColorSchemeColors(android.graphics.Color.rgb(52, 120, 246))
+        refreshLayout.setOnChildScrollUpCallback { _, _ -> list.canScrollVertically(-1) }
+        refreshLayout.setOnRefreshListener { load(refresh = true) }
+        adapter = MovieHistoryAdapter(rows, lifecycleScope, ::openMovie, ::confirmDelete)
         list.layoutManager = LinearLayoutManager(this)
         list.adapter = adapter
-        more.setOnClickListener { load(refresh = nextId == null) }
+        more.setOnClickListener { load(refresh = false) }
     }
 
     override fun onResume() {
@@ -58,25 +69,22 @@ class MyMoviesActivity : AppCompatActivity() {
     }
 
     private fun load(refresh: Boolean) {
-        if (loading) return
+        if (loading || deleting) return
         val owner = RetrofitClient.userId
         if (owner == null || RetrofitClient.token.isNullOrBlank()) {
             startActivity(Intent(this, MainActivity::class.java))
             finish()
             return
         }
-        if (refresh) {
-            rows.clear()
-            adapter.notifyDataSetChanged()
-            nextId = null
-        }
         loading = true
+        refreshLayout.isEnabled = false
+        refreshLayout.isRefreshing = refresh
         more.isEnabled = false
         empty.visibility = View.GONE
         message.text = "正在加载电影历史…"
         lifecycleScope.launch {
             try {
-                val response = RetrofitClient.apiService.movieHistory(beforeId = nextId)
+                val response = apiService.movieHistory(beforeId = if (refresh) null else nextId)
                 response.errorBody()?.close()
                 if (owner != RetrofitClient.userId) {
                     finish()
@@ -85,41 +93,104 @@ class MyMoviesActivity : AppCompatActivity() {
                 val body = response.body()
                 val page = body?.data
                 if (!response.isSuccessful || body?.code != 200 || page == null) {
-                    throw IllegalStateException("读取失败（HTTP ${response.code()}），点击下方重试")
+                    throw IllegalStateException("读取失败（HTTP ${response.code()}），请在顶部下拉重试")
                 }
+                if (refresh) rows.clear()
                 val start = rows.size
                 val knownIds = rows.map { it.id }.toSet()
                 rows.addAll(page.items.filter { it.id !in knownIds })
-                adapter.notifyItemRangeInserted(start, rows.size - start)
+                if (refresh) adapter.notifyDataSetChanged() else adapter.notifyItemRangeInserted(start, rows.size - start)
                 nextId = page.nextBeforeId
                 empty.visibility = if (rows.isEmpty()) View.VISIBLE else View.GONE
                 list.visibility = if (rows.isEmpty()) View.GONE else View.VISIBLE
-                message.text = if (rows.isEmpty()) "当前账号暂无电影历史" else "已加载 ${rows.size} 部 · 点击已完成电影查看闪卡"
-                more.text = if (nextId == null) "刷新" else "加载更多"
+                updateSummary()
+                more.text = "加载更多"
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Exception) {
-                message.text = error.localizedMessage ?: "加载失败，请重试"
-                more.text = "重试"
+                message.text = error.localizedMessage ?: "加载失败，请在顶部下拉重试"
+                empty.visibility = if (rows.isEmpty()) View.VISIBLE else View.GONE
+                if (!refresh) more.text = "重试加载更多"
             } finally {
                 loading = false
+                refreshLayout.isRefreshing = false
+                refreshLayout.isEnabled = true
+                more.isEnabled = true
+                more.visibility = if (nextId == null) View.GONE else View.VISIBLE
+            }
+        }
+    }
+
+    private fun updateSummary() {
+        empty.visibility = if (rows.isEmpty()) View.VISIBLE else View.GONE
+        list.visibility = if (rows.isEmpty()) View.GONE else View.VISIBLE
+        message.text = if (rows.isEmpty()) "当前账号暂无电影历史 · 下拉刷新" else
+            "已加载 ${rows.size} 部 · 在顶部下拉刷新"
+    }
+
+    private fun confirmDelete(movie: MovieHistoryItem) {
+        if (loading || deleting) return
+        val owner = RetrofitClient.userId ?: return
+        AlertDialog.Builder(this)
+            .setTitle("删除电影？")
+            .setMessage("将删除“${movie.fileName ?: "未命名电影"}”及其单词、例句记录，删除后无法恢复。手机中的原视频会保留。")
+            .setNegativeButton("取消", null)
+            .setPositiveButton("删除") { _, _ ->
+                if (owner == RetrofitClient.userId) deleteMovie(movie)
+            }.show()
+    }
+
+    private fun deleteMovie(movie: MovieHistoryItem) {
+        if (loading || deleting) return
+        val owner = RetrofitClient.userId ?: return
+        val account = RetrofitClient.account ?: return
+        deleting = true
+        refreshLayout.isEnabled = false
+        more.isEnabled = false
+        message.text = "正在删除电影…"
+        lifecycleScope.launch {
+            try {
+                val response = apiService.deleteMovie(movie.id)
+                response.errorBody()?.close()
+                if (owner != RetrofitClient.userId || account != RetrofitClient.account) {
+                    finish()
+                    return@launch
+                }
+                // 重试时已删除的记录也视为完成。
+                if (!response.isSuccessful && response.code() != 404) {
+                    throw IllegalStateException("删除失败（HTTP ${response.code()}），请重试")
+                }
+                VideoUploadStore.forAccount(this@MyMoviesActivity, account).forgetDeletedMovie(movie.id)
+                MovieCoverRepository.forget(movie.id, owner)
+                withContext(Dispatchers.IO) {
+                    android.util.AtomicFile(java.io.File(filesDir, "movie_flashcards/user_$owner/${movie.id}.json")).delete()
+                }
+                val index = rows.indexOfFirst { it.id == movie.id }
+                if (index >= 0) { rows.removeAt(index); adapter.notifyItemRemoved(index) }
+                updateSummary()
+                Toast.makeText(this@MyMoviesActivity, "电影及关联单词已删除", Toast.LENGTH_SHORT).show()
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                message.text = error.localizedMessage ?: "删除失败，请重试"
+                Toast.makeText(this@MyMoviesActivity, message.text, Toast.LENGTH_LONG).show()
+            } finally {
+                deleting = false
+                refreshLayout.isEnabled = true
                 more.isEnabled = true
             }
         }
     }
 
     private fun openMovie(movie: MovieHistoryItem) {
+        if (deleting) return
         if (movie.status != "completed") {
             Toast.makeText(this, "电影尚未分析成功，可刷新查看状态", Toast.LENGTH_SHORT).show()
             return
         }
         startActivity(Intent(this, WordFlashcardActivity::class.java).apply {
             putExtra(WordFlashcardActivity.EXTRA_MOVIE_ID, movie.id)
-            val account = RetrofitClient.account
-            val session = account?.let { VideoUploadStore.forAccount(this@MyMoviesActivity, it).state.value }
-            if (session?.result?.movieId == movie.id) {
-                putExtra(WordFlashcardActivity.EXTRA_VIDEO_URI, session.uri)
-            }
+
         })
     }
 }
@@ -127,7 +198,8 @@ class MyMoviesActivity : AppCompatActivity() {
 private class MovieHistoryAdapter(
     private val rows: List<MovieHistoryItem>,
     private val scope: CoroutineScope,
-    private val onClick: (MovieHistoryItem) -> Unit
+    private val onClick: (MovieHistoryItem) -> Unit,
+    private val onDelete: (MovieHistoryItem) -> Unit
 ) : RecyclerView.Adapter<MovieHistoryAdapter.Holder>() {
     class Holder(view: View) : RecyclerView.ViewHolder(view) {
         val cover: ImageView = view.findViewById(R.id.movieCover)
@@ -135,6 +207,7 @@ private class MovieHistoryAdapter(
         val name: TextView = view.findViewById(R.id.movieName)
         val info: TextView = view.findViewById(R.id.movieInfo)
         val status: TextView = view.findViewById(R.id.movieStatus)
+        val delete: TextView = view.findViewById(R.id.deleteMovie)
     }
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = Holder(
         LayoutInflater.from(parent.context).inflate(R.layout.item_movie, parent, false)
@@ -173,5 +246,7 @@ private class MovieHistoryAdapter(
             else -> "状态未知"
         }
         holder.itemView.setOnClickListener { onClick(movie) }
+        holder.delete.contentDescription = "删除${movie.fileName ?: "未命名电影"}"
+        holder.delete.setOnClickListener { onDelete(movie) }
     }
 }

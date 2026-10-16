@@ -61,6 +61,87 @@ Whisper 已加入依赖和锁文件。首次分析按需加载 `tiny.en`，模�
 - 接口文档：http://127.0.0.1:8000/docs
 - 健康检查：http://127.0.0.1:8000/health
 
+## 考研词书
+
+新增「考研词汇全表」（5530 词条）和「考研词汇·词频优先」（2444 词条）。
+Android 的「我的词书」可浏览；视频学习的「选择词书」可选整本或勾选单词，
+上传摘要和后台匹配均使用所选词书。不同词书、不同账号的勾选记录分别保存。
+
+词库来自 [exam-data/NETEMVocabulary](https://github.com/exam-data/NETEMVocabulary)，
+固定版本、原始 JSON、许可和来源说明保存在 `resources/vocabulary/netem/`。
+基于 2024 年考纲；词频来自四六级、考研、专四专八混合试卷，非纯考研真题频率。
+高频版明确筛选词频 **>= 40**，按词频降序展示。数据采用 **CC BY-NC-SA 4.0**；
+App 的「词库来源与词频说明」保留署名及许可链接。
+没有词性、音标或例句的字段不自动编造，完整来源与转换说明见该目录的 `ATTRIBUTION.md`。
+
+首次在新环境中，配置好 MySQL 并启动一次后端后执行：
+
+```powershell
+.\.venv\Scripts\python.exe -m app.import_netem
+```
+
+导入先校验数据校验和与全部字段，再一次性提交两本词书，重复执行不会增加重复条目。
+新增词条保存在 `wordbook_words`，主键为 `(book_id, id)`；四级表和原有单词编号保持不变。
+启动仅建表，不自动联网下载或反复导入词库。导入前接口会明确提示词书尚未导入。
+
+- `GET /wordbooks`：目录及实际词条数，需要登录。
+- `GET /wordbooks/{book_id}/words?start_index=1&end_index=10`：按位置分页（不是按 ID 区间），每页最多 100 条，需要登录。
+- 词书编号：1=四级，3=考研全表，4=考研词频优先；2 预留六级。
+- 视频上传新增表单字段 `book_id`，范围为 `all_book` 或 `selected_book`；后者还需 `selected_word_ids`。
+- 旧客户端的 `all_cet4` / `selected_cet4` 保留，仅允许与四级搭配；不传 `book_id` 默认四级。
+
+运行 `.\test.ps1 -MySQL` 会在随机临时测试库检查重复导入、分页、原四级数据保留和视频流程。
+
+## AI 单词讲解
+
+`POST /ai/explain-word` 已封装硅基流动调用。项目根目录 `.env` 中设置
+`SILICONFLOW_API_KEY` 和 `SILICONFLOW_MODEL=XingChenAGI/Xing4.0-29B`，不要提交真实密钥。
+模型配置沿用本地 `test_ai.py` 已验证的模型，未设置模型时也使用此默认值。
+环境变量优先于 `.env`；修改配置后重启后端。新增依赖后执行上面的 `uv sync --locked`。
+
+启动 `dev.ps1` 后，在 `/docs` 的「AI 讲解」中测试以下请求：
+
+```json
+{
+  "word": "figure out",
+  "sentence": "I can't figure out what he's getting at.",
+  "previous_sentence": "He gave me a hint.",
+  "next_sentence": "Could you explain it?"
+}
+```
+
+`word`、`sentence` 必填且不能全为空白；`previous_sentence`、`next_sentence` 可省略，默认空字符串。
+单词最多 100 个字符，每个句子最多 4000 个字符。成功直接返回 JSON 对象，包含
+`word`、`basic_meaning`、`context_meaning`、`sentence_translation`、`part_of_speech`、
+`usage`、`collocations`、`example`、`example_translation`；其中 `collocations` 为字符串数组，其他字段为字符串。
+
+调用采用异步请求，30 秒总超时，不自动重试。输入错误返回 422；缺少密钥或上游限流返回 503；
+网络错误、上游报错、生成内容不完整或格式错误返回 502；超时返回 504。
+错误响应使用 FastAPI 的 `detail` 字段，不包含密钥或上游原始错误内容。
+当前接口不要求登录，也不查询数据库。
+
+运行 `./test.ps1` 可执行包含 AI 接口在内的离线测试，不调用付费 API。
+
+### Android AI 学习对话
+
+AI 学习页的输入框已接入 `POST /ai/chat/stream`，可自由提问和连续追问。
+它复用上面的硅基流动配置，接收 `messages`（`role` 为 `user` 或 `assistant`，`content` 为文本），
+以及可选的 `word`、`sentence` 学习定位。原来的 `/ai/explain-word` 仍用于结构化单词讲解。
+
+聊天响应为 `text/event-stream`：每个 `data:` 行包含 JSON，以空行分隔。
+`{"type":"delta","content":"文本片段"}` 是实际生成的增量；
+`{"type":"done"}` 表示成功结束；`{"type":"error","message":"错误说明"}` 表示失败。
+流开始后的错误通过事件返回；客户端必须收到 `done` 才算完整成功。
+流式请求最多持续 120 秒，单次无数据等待最多 60 秒，取消请求会关闭上游流。
+
+Android 保留本页最近 20 轮消息，最多向模型发送最近 10 轮完整问答；失败、停止的回答不进入后续上下文。
+支持发送/停止、键盘发送、长按复制、右上角开始新对话，以及从闪卡带入单词和例句。
+页面销毁会取消请求，旋转屏幕后保留已有消息并标记中断；当前不提供跨页面、重启后的历史保存。
+
+重启后端后，在 Android Studio 运行 `android/` 项目进入「AI 学习」即可测试。
+客户端复用 `RetrofitClient.kt` 中的后端地址；手机和电脑需在可互通的网络中。
+不要把电脑的 `127.0.0.1` 用作真机后端地址。
+
 ## 登录返回 JWT
 
 在 `/docs` 中调用 `POST /user/login`，请求仍然是 JSON，字段为 `account`、`password`，使用已经注册的账号。成功返回 HTTP 200：

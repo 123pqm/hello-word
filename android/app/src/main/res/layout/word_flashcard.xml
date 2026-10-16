@@ -8,9 +8,12 @@
     android:orientation="vertical">
 
     <ScrollView
+        android:id="@+id/flashcardScroll"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="match_parent"
+        android:scrollbars="vertical"
+        android:fadeScrollbars="false"
+        android:scrollbarStyle="insideInset"
         android:fillViewport="true">
 
     <LinearLayout
@@ -58,7 +61,7 @@
             android:textColor="#6B7280"
             android:textSize="14sp" />
 
-        <!-- 本地视频播放器 -->
+        <!-- 服务器视频播放器 -->
         <!-- ======================== -->
 
 
@@ -70,34 +73,49 @@
             android:layout_width="match_parent"
             android:layout_height="240dp" />
 
+        <TextView android:id="@+id/videoSourceStatus" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="8dp"
+            android:textColor="#667085" android:textSize="12sp" android:accessibilityLiveRegion="polite" />
+        <Button android:id="@+id/chooseLocalMovie" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:minHeight="48dp" android:text="重新连接视频"
+            android:textColor="#3478F6" android:backgroundTint="#EAF2FF" />
+
         <LinearLayout
+            android:id="@+id/flashcardCard"
+            android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
             android:background="@drawable/bg_word_card"
-            android:elevation="4dp"
             android:clipToOutline="true"
-            android:gravity="center_horizontal"
-            android:orientation="vertical"
-            android:padding="28dp">
+            android:elevation="4dp">
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/btnFavoriteWord"
+                android:layout_width="48dp" android:layout_height="48dp"
+                android:layout_gravity="end" android:layout_margin="4dp"
+                android:padding="13dp" android:src="@drawable/favorite_star"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="收藏当前单词" android:enabled="false"
+                android:accessibilityLiveRegion="polite" />
+            <LinearLayout
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:gravity="center_horizontal"
+                android:paddingHorizontal="28dp" android:paddingTop="4dp" android:paddingBottom="28dp">
+            <TextView
+                android:id="@+id/tvWord"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:gravity="center" android:textAlignment="center"
+                android:text="beautiful" android:textColor="#111827"
+                android:textSize="34sp" android:textStyle="bold" />
 
-                <!-- 单词始终清晰显示，不属于下方的模糊和遮罩区域。 -->
-                <TextView
-                    android:id="@+id/tvWord"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="beautiful"
-                    android:textColor="#111827"
-                    android:textSize="34sp"
-                    android:textStyle="bold" />
-
-            <FrameLayout
+            <LinearLayout
                 android:id="@+id/wordCardRevealArea"
-                android:minHeight="48dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
                 android:clickable="true"
                 android:focusable="true"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:minHeight="48dp">
 
                 <LinearLayout
                     android:id="@+id/wordCardContent"
@@ -106,82 +124,108 @@
                     android:gravity="center_horizontal"
                     android:orientation="vertical">
 
-                <!-- 音标 -->
-                <TextView
-                    android:id="@+id/tvPhonetic"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="/ˈbjuːtɪfl/"
-                    android:textColor="#6B7280"
-                    android:textSize="17sp" />
+                    <!-- 音标 -->
+                    <TextView
+                        android:id="@+id/tvPhonetic"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="/ˈbjuːtɪfl/"
+                        android:textColor="#6B7280"
+                        android:textSize="17sp" />
 
-                <!-- 词性 -->
-                <TextView
-                    android:id="@+id/tvPos"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
-                    android:text="adj."
-                    android:textColor="#3478F6"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
+                    <!-- 词性 -->
+                    <TextView
+                        android:id="@+id/tvPos"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="24dp"
+                        android:text="adj."
+                        android:textColor="#3478F6"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
 
-                <!-- 中文释义 -->
-                <TextView
-                    android:id="@+id/tvMeaning"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:gravity="center"
-                    android:text="美丽的；漂亮的；美好的"
-                    android:textColor="#374151"
-                    android:textSize="20sp" />
-
-                <!-- 分割线 -->
-                    <View
-                        android:id="@+id/sentenceDivider"
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginTop="28dp"
-                        android:background="#E5E7EB" />
-
-                    <!-- 电影字幕/例句 -->
-                <TextView
-                    android:id="@+id/tvSentence"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="22dp"
-                    android:gravity="center"
-                    android:text="It's a beautiful day."
-                    android:textColor="#1F2937"
-                    android:textSize="18sp" />
-
-                <TextView
-                    android:id="@+id/tvSentenceMeaning"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:gravity="center"
-                    android:text="今天真是美好的一天。"
-                    android:textColor="#9CA3AF"
-                    android:textSize="15sp" />
+                    <!-- 中文释义 -->
+                    <TextView
+                        android:id="@+id/tvMeaning"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"
+                        android:text="美丽的；漂亮的；美好的"
+                        android:textColor="#374151"
+                        android:textSize="20sp" />
 
                 </LinearLayout>
 
+                <TextView
+                    android:id="@+id/wordCardMask"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:clickable="false"
+                    android:gravity="center"
+                    android:importantForAccessibility="no"
+                    android:text="点击显示单词释义"
+                    android:textColor="#64748B"
+                    android:textSize="14sp" />
+            </LinearLayout>
 
-            <!-- 遮罩覆盖内容，不参与卡片内容的高度计算。 -->
             <View
-                android:id="@+id/wordCardMask"
+                android:id="@+id/sentenceDivider"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:alpha="0.98"
-                android:background="#F5F7FA"
-                android:clickable="false"
-                android:importantForAccessibility="no"
-                android:visibility="visible" />
+                android:layout_height="1dp"
+                android:layout_marginTop="28dp"
+                android:background="#E5E7EB" />
 
-            </FrameLayout>
+            <LinearLayout
+                android:id="@+id/sentenceRevealArea"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="22dp"
+                android:orientation="vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:minHeight="48dp">
+
+                <LinearLayout
+                    android:id="@+id/sentenceContent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvSentence"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textColor="#1F2937"
+                        android:textSize="18sp" />
+
+                    <TextView
+                        android:id="@+id/tvSentenceMeaning"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"
+                        android:textColor="#9CA3AF"
+                        android:textSize="15sp"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/sentenceMask"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:clickable="false"
+                    android:gravity="center"
+                    android:importantForAccessibility="no"
+                    android:text="点击显示例句"
+                    android:textColor="#64748B"
+                    android:textSize="14sp" />
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/tvSentenceStatus"
@@ -193,21 +237,8 @@
                 android:textColor="#6B7280"
                 android:textSize="14sp"
                 android:visibility="gone" />
+            </LinearLayout>
         </LinearLayout>
-
-    </LinearLayout>
-    </ScrollView>
-
-    <!-- 操作区独立于滚动内容，始终保留在屏幕底部。 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:background="#F5F7FA"
-        android:paddingStart="20dp"
-        android:paddingEnd="20dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp">
 
         <Button
             android:id="@+id/btnJumpToSentence"
@@ -255,5 +286,7 @@
         </LinearLayout>
 
     </LinearLayout>
+
+    </ScrollView>
 
 </LinearLayout>

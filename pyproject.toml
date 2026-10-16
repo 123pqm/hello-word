@@ -9,6 +9,7 @@ dependencies = [
     "pymysql[rsa]>=1.1.1,<2",
     "pytest>=9.1.1",
     "python-dotenv>=1.0,<2",
+    "openai>=3.16.2,<4",
     "openai-whisper==20250625",
 ]
 

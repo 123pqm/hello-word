@@ -1,0 +1,2737 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AI 影视词汇学习 API",
+    "description": "AI 影视词汇学习 HarmonyOS App 的后端服务。",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "系统"
+        ],
+        "summary": "Health",
+        "description": "返回服务健康状态。",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/words/{word_id}": {
+      "get": {
+        "tags": [
+          "单词"
+        ],
+        "summary": "Get Word By Id",
+        "description": "使用 Path 参数，根据主键查询一个单词。",
+        "operationId": "get_word_by_id_words__word_id__get",
+        "parameters": [
+          {
+            "name": "word_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Word Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WordResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/words": {
+      "get": {
+        "tags": [
+          "单词"
+        ],
+        "summary": "Search Words",
+        "description": "使用 Query 参数，按英文单词进行模糊搜索。",
+        "operationId": "search_words_words_get",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 50,
+              "title": "Keyword"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 10,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WordListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "单词"
+        ],
+        "summary": "Add Word",
+        "operationId": "add_word_words_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WordCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WordResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/sign": {
+      "post": {
+        "tags": [
+          "注册"
+        ],
+        "summary": "Resign",
+        "operationId": "resign_user_sign_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/account_resign"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/resign_response"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/login": {
+      "post": {
+        "tags": [
+          "登录"
+        ],
+        "summary": "Login",
+        "operationId": "login_user_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/account_login"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/login_response"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/chose": {
+      "put": {
+        "tags": [
+          "选择单词书"
+        ],
+        "summary": "Chose Book",
+        "operationId": "chose_book_user_chose_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/book_detail"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/chose_book_response"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/user/chose/cet4": {
+      "get": {
+        "tags": [
+          "单词详情"
+        ],
+        "summary": "Cet4 Detail",
+        "operationId": "cet4_detail_user_chose_cet4_get",
+        "security": [
+          {
+            "AuthorizationToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "start_index",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Start Index"
+            }
+          },
+          {
+            "name": "end_index",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "End Index"
+            }
+          },
+          {
+            "name": "book_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/cet_4_response"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/video/upload": {
+      "post": {
+        "tags": [
+          "视频"
+        ],
+        "summary": "通用视频上传（兼容 Android）",
+        "operationId": "upload_video_video_upload_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_video_video_upload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/video/web/upload": {
+      "post": {
+        "tags": [
+          "视频"
+        ],
+        "summary": "网页上传视频",
+        "description": "网页使用 multipart/form-data 上传用户选择的视频文件，不接收本地文件路径。需要 Authorization 登录凭证；参数、返回结构和处理流程与 /video/upload 相同。上传返回 pending 后，用 /video/{movie_id}/status 查询处理状态，完成后用 /video/{movie_id}/words 读取结果。",
+        "operationId": "upload_video_video_web_upload_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_video_video_web_upload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/video/{movie_id}": {
+      "delete": {
+        "tags": [
+          "视频"
+        ],
+        "summary": "Delete Movie",
+        "description": "在同一事务内删除自己的电影和关联闪卡，与后台写入共用电影行锁。",
+        "operationId": "delete_movie_video__movie_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "movie_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Movie Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/video/{movie_id}/file": {
+      "get": {
+        "tags": [
+          "视频"
+        ],
+        "summary": "Get Movie File",
+        "description": "本机文件关联失效时播放已上传的副本，支持播放器的 Range 跳转。",
+        "operationId": "get_movie_file_video__movie_id__file_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "movie_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Movie Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/video/{movie_id}/cover": {
+      "get": {
+        "tags": [
+          "视频"
+        ],
+        "summary": "Get Movie Cover",
+        "operationId": "get_movie_cover_video__movie_id__cover_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "movie_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Movie Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/video/history": {
+      "get": {
+        "tags": [
+          "视频"
+        ],
+        "summary": "Get Movie History",
+        "description": "只返回当前用户的电影，按上传编号倒序；游标翻页避免新增上传造成重复。",
+        "operationId": "get_movie_history_video_history_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 30,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "before_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovieHistoryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/video/{movie_id}/words": {
+      "get": {
+        "tags": [
+          "视频"
+        ],
+        "summary": "Get Movie Words",
+        "operationId": "get_movie_words_video__movie_id__words_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "movie_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Movie Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovieWordsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/video/{movie_id}/status": {
+      "get": {
+        "tags": [
+          "视频"
+        ],
+        "summary": "Get Movie Status",
+        "operationId": "get_movie_status_video__movie_id__status_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "movie_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Movie Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovieStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/video/{movie_id}/playback": {
+      "post": {
+        "tags": [
+          "视频"
+        ],
+        "summary": "Create Playback",
+        "operationId": "create_playback_video__movie_id__playback_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "movie_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Movie Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/video/{movie_id}/stream": {
+      "get": {
+        "tags": [
+          "视频"
+        ],
+        "summary": "Stream Movie",
+        "operationId": "stream_movie_video__movie_id__stream_get",
+        "parameters": [
+          {
+            "name": "movie_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Movie Id"
+            }
+          },
+          {
+            "name": "ticket",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "title": "Ticket"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/checkin": {
+      "get": {
+        "tags": [
+          "学习打卡"
+        ],
+        "summary": "Read Checkin",
+        "operationId": "read_checkin_user_checkin_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckinResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "学习打卡"
+        ],
+        "summary": "Mark Checkin",
+        "operationId": "mark_checkin_user_checkin_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckinResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/ai/explain-word": {
+      "post": {
+        "tags": [
+          "AI 讲解"
+        ],
+        "summary": "Explain Word Endpoint",
+        "operationId": "explain_word_endpoint_ai_explain_word_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExplainWordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplainWordResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/chat/stream": {
+      "post": {
+        "tags": [
+          "AI 讲解"
+        ],
+        "summary": "Chat Stream Endpoint",
+        "operationId": "chat_stream_endpoint_ai_chat_stream_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/favorites/words": {
+      "put": {
+        "tags": [
+          "收藏单词"
+        ],
+        "summary": "Save Favorite",
+        "operationId": "save_favorite_favorites_words_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FavoriteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FavoriteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "收藏单词"
+        ],
+        "summary": "List Favorites",
+        "operationId": "list_favorites_favorites_words_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 30,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "before_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FavoritesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "收藏单词"
+        ],
+        "summary": "Delete Favorite",
+        "operationId": "delete_favorite_favorites_words_delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "word",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "title": "Word"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/favorites/words/status": {
+      "get": {
+        "tags": [
+          "收藏单词"
+        ],
+        "summary": "Favorite Status",
+        "operationId": "favorite_status_favorites_words_status_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "word",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "title": "Word"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FavoriteStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/video/{movie_id}/progress": {
+      "get": {
+        "tags": [
+          "视频"
+        ],
+        "summary": "Track Progress",
+        "operationId": "track_progress_video__movie_id__progress_get",
+        "parameters": [
+          {
+            "name": "movie_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Movie Id"
+            }
+          },
+          {
+            "name": "X-Video-Tracking",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Video-Tracking"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovieStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wordbooks": {
+      "get": {
+        "tags": [
+          "词书"
+        ],
+        "summary": "List Wordbooks",
+        "operationId": "list_wordbooks_wordbooks_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/wordbooks/{book_id}/words": {
+      "get": {
+        "tags": [
+          "词书"
+        ],
+        "summary": "Book Words",
+        "operationId": "book_words_wordbooks__book_id__words_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Book Id"
+            }
+          },
+          {
+            "name": "start_index",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Start Index"
+            }
+          },
+          {
+            "name": "end_index",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 20,
+              "title": "End Index"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WordbookWordListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wordbooks/{book_id}/search": {
+      "get": {
+        "tags": [
+          "词书"
+        ],
+        "summary": "Search Words",
+        "description": "词书内忽略大小写的包含搜索；精确、前缀、包含依次排序，按需分页。\n\n输入停止 350ms 后由客户端请求；下一页沿用相同 book_id/q/limit。\n不计算全量总数，多取一条判断 has_more。空白关键词不查询数据库。",
+        "operationId": "search_words_wordbooks__book_id__search_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Book Id"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80,
+              "title": "Q"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 30,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100000,
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/logout": {
+      "post": {
+        "tags": [
+          "用户"
+        ],
+        "summary": "退出当前登录",
+        "operationId": "logout_user_logout_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/user/me": {
+      "get": {
+        "tags": [
+          "用户资料"
+        ],
+        "summary": "Get Profile",
+        "operationId": "get_profile_user_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/user/me/wordbook": {
+      "put": {
+        "tags": [
+          "用户资料"
+        ],
+        "summary": "Select Wordbook",
+        "operationId": "select_wordbook_user_me_wordbook_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelectWordbookRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Body_upload_video_video_upload_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          },
+          "selection_mode": {
+            "type": "string",
+            "title": "Selection Mode",
+            "default": "all_cet4"
+          },
+          "selected_word_ids": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Word Ids"
+          },
+          "book_id": {
+            "type": "integer",
+            "title": "Book Id",
+            "default": 1
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_video_video_upload_post"
+      },
+      "Body_upload_video_video_web_upload_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          },
+          "selection_mode": {
+            "type": "string",
+            "title": "Selection Mode",
+            "default": "all_cet4"
+          },
+          "selected_word_ids": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Word Ids"
+          },
+          "book_id": {
+            "type": "integer",
+            "title": "Book Id",
+            "default": 1
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_video_video_web_upload_post"
+      },
+      "Cet4WordResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "word": {
+            "type": "string",
+            "title": "Word"
+          },
+          "meaning": {
+            "type": "string",
+            "title": "Meaning"
+          },
+          "pos": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "word",
+          "meaning"
+        ],
+        "title": "Cet4WordResponse"
+      },
+      "ChatMessage": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ],
+            "title": "Role"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "ChatMessage"
+      },
+      "ChatRequest": {
+        "properties": {
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/ChatMessage"
+            },
+            "type": "array",
+            "maxItems": 21,
+            "minItems": 1,
+            "title": "Messages"
+          },
+          "word": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Word",
+            "default": ""
+          },
+          "sentence": {
+            "type": "string",
+            "maxLength": 4000,
+            "title": "Sentence",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "messages"
+        ],
+        "title": "ChatRequest"
+      },
+      "CheckinData": {
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "today": {
+            "type": "string",
+            "format": "date",
+            "title": "Today"
+          },
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/CheckinDay"
+            },
+            "type": "array",
+            "title": "Days"
+          },
+          "week_count": {
+            "type": "integer",
+            "title": "Week Count"
+          },
+          "streak_days": {
+            "type": "integer",
+            "title": "Streak Days"
+          },
+          "next_checkin_after_seconds": {
+            "type": "integer",
+            "title": "Next Checkin After Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "today",
+          "days",
+          "week_count",
+          "streak_days",
+          "next_checkin_after_seconds"
+        ],
+        "title": "CheckinData"
+      },
+      "CheckinDay": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "weekday": {
+            "type": "integer",
+            "title": "Weekday"
+          },
+          "checked": {
+            "type": "boolean",
+            "title": "Checked"
+          },
+          "is_today": {
+            "type": "boolean",
+            "title": "Is Today"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "weekday",
+          "checked",
+          "is_today"
+        ],
+        "title": "CheckinDay"
+      },
+      "CheckinResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "data": {
+            "$ref": "#/components/schemas/CheckinData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "CheckinResponse"
+      },
+      "ExplainWordRequest": {
+        "properties": {
+          "word": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Word"
+          },
+          "sentence": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Sentence"
+          },
+          "previous_sentence": {
+            "type": "string",
+            "maxLength": 4000,
+            "title": "Previous Sentence",
+            "default": ""
+          },
+          "next_sentence": {
+            "type": "string",
+            "maxLength": 4000,
+            "title": "Next Sentence",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "word",
+          "sentence"
+        ],
+        "title": "ExplainWordRequest"
+      },
+      "ExplainWordResponse": {
+        "properties": {
+          "word": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Word"
+          },
+          "basic_meaning": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Basic Meaning"
+          },
+          "context_meaning": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Context Meaning"
+          },
+          "sentence_translation": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Sentence Translation"
+          },
+          "part_of_speech": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Part Of Speech"
+          },
+          "usage": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Usage"
+          },
+          "collocations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Collocations"
+          },
+          "example": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Example"
+          },
+          "example_translation": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Example Translation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "word",
+          "basic_meaning",
+          "context_meaning",
+          "sentence_translation",
+          "part_of_speech",
+          "usage",
+          "collocations",
+          "example",
+          "example_translation"
+        ],
+        "title": "ExplainWordResponse"
+      },
+      "FavoritePage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FavoriteWord"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_before_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Before Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "FavoritePage"
+      },
+      "FavoriteRequest": {
+        "properties": {
+          "movie_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Movie Id"
+          },
+          "word": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Word"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "movie_id",
+          "word"
+        ],
+        "title": "FavoriteRequest"
+      },
+      "FavoriteResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "data": {
+            "$ref": "#/components/schemas/FavoriteWord"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "FavoriteResponse"
+      },
+      "FavoriteStatus": {
+        "properties": {
+          "word": {
+            "type": "string",
+            "title": "Word"
+          },
+          "is_favorite": {
+            "type": "boolean",
+            "title": "Is Favorite"
+          }
+        },
+        "type": "object",
+        "required": [
+          "word",
+          "is_favorite"
+        ],
+        "title": "FavoriteStatus"
+      },
+      "FavoriteStatusResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "data": {
+            "$ref": "#/components/schemas/FavoriteStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "FavoriteStatusResponse"
+      },
+      "FavoriteWord": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "word": {
+            "type": "string",
+            "title": "Word"
+          },
+          "meaning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meaning"
+          },
+          "sentence_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sentence Text"
+          },
+          "source_movie_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Movie Id"
+          },
+          "source_movie_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Movie Name"
+          },
+          "start_time": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Time"
+          },
+          "end_time": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "word",
+          "meaning",
+          "sentence_text",
+          "source_movie_id",
+          "source_movie_name",
+          "start_time",
+          "end_time",
+          "created_at"
+        ],
+        "title": "FavoriteWord"
+      },
+      "FavoritesResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "data": {
+            "$ref": "#/components/schemas/FavoritePage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "FavoritesResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MatchedMovieWord": {
+        "properties": {
+          "word": {
+            "type": "string",
+            "title": "Word"
+          },
+          "meaning": {
+            "type": "string",
+            "title": "Meaning"
+          },
+          "start_time": {
+            "type": "number",
+            "title": "Start Time"
+          },
+          "end_time": {
+            "type": "number",
+            "title": "End Time"
+          },
+          "sentence_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sentence Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "word",
+          "meaning",
+          "start_time",
+          "end_time"
+        ],
+        "title": "MatchedMovieWord"
+      },
+      "MovieHistoryItem": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "file_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Name"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "MovieHistoryItem"
+      },
+      "MovieHistoryPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MovieHistoryItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_before_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Before Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "MovieHistoryPage"
+      },
+      "MovieHistoryResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "data": {
+            "$ref": "#/components/schemas/MovieHistoryPage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "MovieHistoryResponse"
+      },
+      "MovieStatus": {
+        "properties": {
+          "movie_id": {
+            "type": "integer",
+            "title": "Movie Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "processing",
+              "completed",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "matched_word_count": {
+            "type": "integer",
+            "title": "Matched Word Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "movie_id",
+          "status"
+        ],
+        "title": "MovieStatus"
+      },
+      "MovieStatusResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "查询成功"
+          },
+          "data": {
+            "$ref": "#/components/schemas/MovieStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "MovieStatusResponse"
+      },
+      "MovieWords": {
+        "properties": {
+          "movie_id": {
+            "type": "integer",
+            "title": "Movie Id"
+          },
+          "words": {
+            "items": {
+              "$ref": "#/components/schemas/MatchedMovieWord"
+            },
+            "type": "array",
+            "title": "Words"
+          }
+        },
+        "type": "object",
+        "required": [
+          "movie_id",
+          "words"
+        ],
+        "title": "MovieWords"
+      },
+      "MovieWordsResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "查询成功"
+          },
+          "data": {
+            "$ref": "#/components/schemas/MovieWords"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "MovieWordsResponse"
+      },
+      "SelectWordbookRequest": {
+        "properties": {
+          "book_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Book Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "book_id"
+        ],
+        "title": "SelectWordbookRequest"
+      },
+      "UserProfile": {
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "account": {
+            "type": "string",
+            "title": "Account"
+          },
+          "book_id": {
+            "type": "integer",
+            "title": "Book Id"
+          },
+          "book": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Book"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "account",
+          "book_id",
+          "book"
+        ],
+        "title": "UserProfile"
+      },
+      "UserProfileResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "data": {
+            "$ref": "#/components/schemas/UserProfile"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "UserProfileResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WordCreate": {
+        "properties": {
+          "word": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Word"
+          },
+          "meaning": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Meaning"
+          }
+        },
+        "type": "object",
+        "required": [
+          "word",
+          "meaning"
+        ],
+        "title": "WordCreate"
+      },
+      "WordListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WordResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "WordListResponse"
+      },
+      "WordResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "word": {
+            "type": "string",
+            "title": "Word"
+          },
+          "meaning": {
+            "type": "string",
+            "title": "Meaning"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "word",
+          "meaning"
+        ],
+        "title": "WordResponse"
+      },
+      "WordbookWordListResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/WordbookWordResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "book": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Book"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "total",
+          "book"
+        ],
+        "title": "WordbookWordListResponse"
+      },
+      "WordbookWordResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "word": {
+            "type": "string",
+            "title": "Word"
+          },
+          "meaning": {
+            "type": "string",
+            "title": "Meaning"
+          },
+          "pos": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pos"
+          },
+          "frequency": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frequency"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "word",
+          "meaning"
+        ],
+        "title": "WordbookWordResponse"
+      },
+      "account_login": {
+        "properties": {
+          "account": {
+            "type": "string",
+            "maxLength": 15,
+            "minLength": 5,
+            "title": "Account"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 15,
+            "minLength": 5,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "account",
+          "password"
+        ],
+        "title": "account_login"
+      },
+      "account_resign": {
+        "properties": {
+          "account": {
+            "type": "string",
+            "maxLength": 15,
+            "minLength": 5,
+            "title": "Account"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 15,
+            "minLength": 5,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "account",
+          "password"
+        ],
+        "title": "account_resign"
+      },
+      "book_detail": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "book_id": {
+            "type": "integer",
+            "title": "Book Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "book_id"
+        ],
+        "title": "book_detail"
+      },
+      "cet_4_response": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/Cet4WordResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "cet_4_response"
+      },
+      "chose_book_response": {
+        "properties": {
+          "reply": {
+            "type": "string",
+            "title": "Reply"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reply"
+        ],
+        "title": "chose_book_response"
+      },
+      "login_response": {
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "account": {
+            "type": "string",
+            "title": "Account"
+          },
+          "reply": {
+            "type": "string",
+            "title": "Reply"
+          },
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          },
+          "expires_in": {
+            "type": "integer",
+            "title": "Expires In"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "account",
+          "reply",
+          "access_token",
+          "expires_in"
+        ],
+        "title": "login_response"
+      },
+      "resign_response": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "reply": {
+            "type": "string",
+            "title": "Reply"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "reply"
+        ],
+        "title": "resign_response"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      },
+      "AuthorizationToken": {
+        "type": "apiKey",
+        "description": "填写登录返回的 token，或 Bearer <token>，不要加双引号。",
+        "in": "header",
+        "name": "Authorization"
+      }
+    }
+  }
+}

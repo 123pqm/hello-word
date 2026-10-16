@@ -29,12 +29,13 @@ def selection_database():
     return database
 
 
+@pytest.mark.parametrize("upload_path", ["/video/upload", "/video/web/upload"])
 @pytest.mark.parametrize("form, expected_ids", [
     ({}, None),
     ({"selection_mode": "all_cet4"}, None),
     ({"selection_mode": "selected_cet4", "selected_word_ids": "[2, 2]"}, [2]),
 ])
-def test_upload_passes_scope_to_background(monkeypatch, tmp_path, selection_database, form, expected_ids):
+def test_upload_passes_scope_to_background(monkeypatch, tmp_path, selection_database, form, expected_ids, upload_path):
     worker = MagicMock()
     monkeypatch.setattr(main, "process_movie", worker)
     monkeypatch.setattr(main, "UPLOAD_DIR", tmp_path)
@@ -43,7 +44,7 @@ def test_upload_passes_scope_to_background(monkeypatch, tmp_path, selection_data
     try:
         # 不启动 lifespan，避免初始化用户数据库。
         client = TestClient(main.app)
-        response = client.post("/video/upload", data=form, files={"file": ("demo.mp4", b"video", "video/mp4")})
+        response = client.post(upload_path, data=form, files={"file": ("demo.mp4", b"video", "video/mp4")})
         client.close()
         assert response.status_code == 200, response.text
         assert response.json()["data"]["status"] == "pending"
@@ -55,8 +56,9 @@ def test_upload_passes_scope_to_background(monkeypatch, tmp_path, selection_data
         main.app.dependency_overrides.pop(get_current_user_id)
 
 
+@pytest.mark.parametrize("upload_path", ["/video/upload", "/video/web/upload"])
 @pytest.mark.parametrize("ids", [None, "[]", "bad json", "[true]", '["1"]', "[0]", "[999]"])
-def test_bad_selected_scope_cannot_fall_back_to_whole_book(monkeypatch, tmp_path, selection_database, ids):
+def test_bad_selected_scope_cannot_fall_back_to_whole_book(monkeypatch, tmp_path, selection_database, ids, upload_path):
     worker = MagicMock()
     monkeypatch.setattr(main, "process_movie", worker)
     monkeypatch.setattr(main, "UPLOAD_DIR", tmp_path)
@@ -67,7 +69,7 @@ def test_bad_selected_scope_cannot_fall_back_to_whole_book(monkeypatch, tmp_path
         if ids is not None:
             form["selected_word_ids"] = ids
         client = TestClient(main.app)
-        response = client.post("/video/upload", data=form, files={"file": ("demo.mp4", b"video", "video/mp4")})
+        response = client.post(upload_path, data=form, files={"file": ("demo.mp4", b"video", "video/mp4")})
         client.close()
         assert response.status_code == 422
         worker.assert_not_called()

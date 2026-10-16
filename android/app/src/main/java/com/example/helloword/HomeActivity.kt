@@ -59,6 +59,7 @@ class HomeActivity : AppCompatActivity() {
         }
         RetrofitClient.account?.let { account ->
             val store = VideoUploadStore.forAccount(applicationContext, account)
+            if (store.state.value?.isBusy == true) VideoProcessingService.start(this)
             lifecycleScope.launch {
                 repeatOnLifecycle(Lifecycle.State.STARTED) { store.observeProcessing() }
             }
