@@ -1,5 +1,7 @@
 """词书目录和按位置分页的词条列表。"""
 from typing import Annotated
+import logging
+import re
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pymysql.connections import Connection
@@ -8,9 +10,33 @@ from app.auth import get_current_user_id
 from app.database import get_database
 from app.schemas import WordbookWordListResponse
 from app.services.wordbook_service import BOOKS, validate_book
+from app.services.spelling_service import suggest_words
 
 
 router = APIRouter(prefix="/wordbooks", tags=["词书"], dependencies=[Depends(get_current_user_id)])
+
+
+@router.get("/{book_id}/suggestions")
+def spelling_suggestions(book_id: int, database: Annotated[Connection, Depends(get_database)],
+                         q: Annotated[str, Query(min_length=1, max_length=40)]):
+    try:
+        validate_book(book_id)
+    except ValueError as error:
+        raise HTTPException(404, str(error)) from error
+    query = q.strip().lower()
+    if not re.fullmatch(r"[a-z][a-z'-]{1,39}", query):
+        return {"data": [], "book_id": book_id}
+    with database.cursor() as cursor:
+        if book_id == 1:
+            cursor.execute("SELECT id, word, meaning, pos FROM cet4")
+        else:
+            cursor.execute("SELECT id, word, meaning, pos FROM wordbook_words WHERE book_id=%s", (book_id,))
+        vocabulary = cursor.fetchall()
+    try:
+        return {"data": suggest_words(query, vocabulary), "book_id": book_id}
+    except Exception as error:
+        logging.getLogger(__name__).exception("拼写候选生成失败")
+        raise HTTPException(503, "猜你想搜暂时不可用，请稍后重试") from error
 
 
 @router.get("")

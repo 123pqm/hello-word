@@ -99,8 +99,8 @@ def test_flashcards_return_only_requested_movie_words(status_client):
     client, cursor, database = status_client
     cursor.fetchone.return_value = {"id": 17, "status": "completed"}
     cursor.fetchall.return_value = [
-        {"word": "movie", "meaning": "鐢靛奖", "start_time": 1.25, "end_time": 1.8},
-        {"word": "world", "meaning": "涓栫晫", "start_time": 7.0, "end_time": 7.5},
+        {"id": 101, "word": "movie", "meaning": "鐢靛奖", "start_time": 1.25, "end_time": 1.8},
+        {"id": 102, "word": "world", "meaning": "涓栫晫", "start_time": 7.0, "end_time": 7.5},
     ]
     response = client.get("/video/17/words")
     assert response.status_code == 200

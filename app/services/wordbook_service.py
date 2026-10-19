@@ -4,6 +4,7 @@ from app.services.cet4_service import load_cet4_vocabulary, match_vocabulary
 
 SOURCE_URL = "https://github.com/exam-data/NETEMVocabulary"
 BOOKS = {
+    5: {"id": 5, "name": "补充词库", "description": "同学模型词库中现有词书未收录的词汇", "source_url": None, "license": None},
     1: {"id": 1, "name": "CET-4", "description": "大学英语四级词库", "source_url": None, "license": None},
     3: {"id": 3, "name": "考研词汇全表", "description": "2024 考纲词表，按混合考试语料词频排序",
         "source_url": SOURCE_URL, "license": "CC BY-NC-SA 4.0"},

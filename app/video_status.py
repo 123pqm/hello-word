@@ -2,6 +2,7 @@
 import logging
 import os
 import time
+from pathlib import Path as PathlibPath
 import jwt
 from fastapi.security import HTTPAuthorizationCredentials
 from app.auth import bearer, token_fingerprint
@@ -9,11 +10,12 @@ from datetime import datetime
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
+from decimal import Decimal
 from pymysql.connections import Connection
 from fastapi.responses import FileResponse
 from app.services.movie_cover import get_cover
-from app.services import movie_cover
+from app.services import movie_cover, movie_playback
 
 from app.database import get_database
 from app.auth import get_current_user_id
@@ -151,6 +153,7 @@ class MovieStatusResponse(BaseModel):
 
 
 class MatchedMovieWord(BaseModel):
+    id: int | None = None
     word: str
     meaning: str
     # 新处理的视频为所在句子的起止秒数；历史记录仍保留原词时间。
@@ -170,6 +173,60 @@ class MovieWordsResponse(BaseModel):
     data: MovieWords
 
 
+class MovieWordCorrection(BaseModel):
+    start_time: Decimal = Field(ge=0, max_digits=10, decimal_places=2, allow_inf_nan=False)
+    end_time: Decimal = Field(gt=0, max_digits=10, decimal_places=2, allow_inf_nan=False)
+    sentence_text: str = Field(max_length=4000)
+
+    @model_validator(mode="after")
+    def validate_range(self):
+        if self.end_time <= self.start_time:
+            raise ValueError("结束时间必须大于开始时间")
+        self.sentence_text = self.sentence_text.strip()
+        if not self.sentence_text:
+            raise ValueError("例句不能为空")
+        return self
+
+
+@router.patch("/{movie_id}/words/{word_id}", response_model=MatchedMovieWord)
+@router.post("/{movie_id}/words/{word_id}/correction", response_model=MatchedMovieWord)
+def correct_movie_word(
+    movie_id: Annotated[int, Path(gt=0)],
+    word_id: Annotated[int, Path(gt=0)],
+    body: MovieWordCorrection,
+    database: Annotated[Connection, Depends(get_database)],
+    user_id: Annotated[int, Depends(get_current_user_id)],
+):
+    try:
+        with database.cursor() as cursor:
+            cursor.execute("SELECT id, status FROM movies WHERE id=%s AND user_id=%s FOR UPDATE",
+                           (movie_id, user_id))
+            movie = cursor.fetchone()
+            if movie is None:
+                raise HTTPException(404, "视频任务不存在")
+            if movie["status"] != "completed":
+                raise HTTPException(409, "视频尚未处理完成")
+            cursor.execute("SELECT id, word, meaning FROM movie_words WHERE id=%s AND movie_id=%s FOR UPDATE",
+                           (word_id, movie_id))
+            word = cursor.fetchone()
+            if word is None:
+                raise HTTPException(404, "闪卡不存在")
+            cursor.execute("""UPDATE movie_words SET start_time=%s, end_time=%s, sentence_text=%s
+                              WHERE id=%s AND movie_id=%s""",
+                           (body.start_time, body.end_time, body.sentence_text, word_id, movie_id))
+            result = MatchedMovieWord(**word, start_time=body.start_time,
+                                      end_time=body.end_time, sentence_text=body.sentence_text)
+        database.commit()
+        return result
+    except HTTPException:
+        database.rollback()
+        raise
+    except Exception:
+        database.rollback()
+        logger.exception("校正闪卡失败")
+        raise HTTPException(503, "保存失败，请稍后重试") from None
+
+
 @router.get("/{movie_id}/words", response_model=MovieWordsResponse)
 def get_movie_words(
     movie_id: Annotated[int, Path(gt=0)],
@@ -187,7 +244,7 @@ def get_movie_words(
             if movie["status"] != "completed":
                 raise HTTPException(status_code=409, detail="视频尚未处理成功，暂时没有可用的闪卡结果")
             cursor.execute(
-                """SELECT word, meaning, start_time, end_time, sentence_text
+                """SELECT id, word, meaning, start_time, end_time, sentence_text
                    FROM movie_words WHERE movie_id = %s
                    ORDER BY start_time, end_time, word""",
                 (movie_id,),
@@ -243,13 +300,24 @@ def create_playback(
     user_id: Annotated[int, Depends(get_current_user_id)],
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(bearer)],
     response: Response,
+    compatible: bool = False,
 ):
-    get_movie_file(movie_id, database, user_id)  # Check ownership and file availability.
+    original = get_movie_file(movie_id, database, user_id)  # Check ownership before conversion.
+    if compatible:
+        try:
+            ready = movie_playback.ensure_compatible(PathlibPath(original.path))
+        except Exception:
+            logger.exception("Compatible playback preparation failed for movie %s", movie_id)
+            raise HTTPException(503, "兼容视频生成失败，请检查后端 FFmpeg 和视频文件") from None
+        if ready is None:
+            response.status_code = 202
+            response.headers["Cache-Control"] = "no-store"
+            return {"data": {"status": "preparing"}}
     key = os.environ["JWT_SECRET_KEY"]
     claims = jwt.decode(credentials.credentials, key, algorithms=["HS256"])
     expires = min(int(claims["exp"]), int(time.time()) + 1800)
     ticket = jwt.encode({"sub": str(user_id), "movie_id": movie_id,
-                         "aud": "movie-playback", "exp": expires,
+                         "aud": "movie-playback", "exp": expires, "compatible": compatible,
                          "session": token_fingerprint(credentials.credentials)}, key, algorithm="HS256")
     response.headers["Cache-Control"] = "no-store"
     return {"data": {"ticket": ticket, "expires_at": expires}}
@@ -279,5 +347,10 @@ def stream_movie(
         if cursor.fetchone() is None:
             raise HTTPException(401, "播放链接已失效")
     result = get_movie_file(movie_id, database, user_id)
+    if claims.get("compatible"):
+        target = movie_playback.cached_path(PathlibPath(result.path))
+        if not target.is_file():
+            raise HTTPException(503, "兼容视频缓存不存在，请重新连接")
+        result = FileResponse(target, media_type="video/mp4", headers={"Cache-Control": "private, no-store"})
     result.headers["Referrer-Policy"] = "no-referrer"
     return result
