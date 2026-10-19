@@ -232,6 +232,9 @@ def create_movie_tables(connection: Connection) -> None:
         cursor.execute("SHOW COLUMNS FROM movies LIKE 'enable_lemmatization'")
         if cursor.fetchone() is None:
             cursor.execute("ALTER TABLE movies ADD COLUMN enable_lemmatization BOOLEAN NOT NULL DEFAULT FALSE")
+        cursor.execute("SHOW COLUMNS FROM movies LIKE 'whisper_model'")
+        if cursor.fetchone() is None:
+            cursor.execute("ALTER TABLE movies ADD COLUMN whisper_model VARCHAR(16) NOT NULL DEFAULT 'tiny.en'")
         cursor.execute("SHOW COLUMNS FROM movie_words LIKE 'sentence_text'")
         if cursor.fetchone() is None:
             cursor.execute("ALTER TABLE movie_words ADD COLUMN sentence_text TEXT NULL")

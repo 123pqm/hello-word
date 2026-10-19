@@ -90,7 +90,7 @@ def test_selected_words_only_keep_first_occurrence(selection_database, monkeypat
     selected = match_cet4_words(words, selection_database, [2])
     assert [word["start"] for word in selected] == [2.0]
     assert all(word["meaning"] == "非洲的" for word in selected)
-    monkeypatch.setattr(movie_task, "transcribe_movie", lambda _: words)
+    monkeypatch.setattr(movie_task, "transcribe_movie", lambda _, model="tiny.en": words)
     monkeypatch.setattr(movie_task, "connect_database", lambda: selection_database)
     movie_task.process_movie(17, "demo.mp4", [2])
     cursor = selection_database.cursor.return_value.__enter__.return_value

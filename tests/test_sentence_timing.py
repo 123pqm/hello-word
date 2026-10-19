@@ -72,7 +72,7 @@ def test_first_occurrence_is_saved_with_whole_sentence_range(monkeypatch):
     matched = match_cet4_words(list(reversed(words)), database, [7])
     assert matched == [{"word": "beautiful", "meaning": "美丽的", "start": 1, "end": 2,
                         "sentence_text": "A beautiful world."}]
-    monkeypatch.setattr(movie_task, "transcribe_movie", lambda _: words)
+    monkeypatch.setattr(movie_task, "transcribe_movie", lambda _, model="tiny.en": words)
     monkeypatch.setattr(movie_task, "connect_database", lambda: database)
     movie_task.process_movie(17, "demo.mp4", [7])
     assert cursor.executemany.call_args.args[1] == [(17, "beautiful", "美丽的", 1, 2, "A beautiful world.")]

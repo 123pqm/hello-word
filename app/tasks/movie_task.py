@@ -18,18 +18,22 @@ def process_movie(movie_id: int, file_path: str, selected_word_ids: list[int] | 
     started_at = perf_counter()
     database = None
     try:
-        words = transcribe_movie(file_path)
+        database = connect_database()
+        with database.cursor() as cursor:
+            cursor.execute("SELECT enable_lemmatization, whisper_model FROM movies WHERE id=%s", (movie_id,))
+            task = cursor.fetchone()
+        database.close()
+        database = None
+        if task is None:
+            return
+        model_name = task.get("whisper_model") or "tiny.en"
+        words = transcribe_movie(file_path, model_name)
         print(f"识别完成：共 {len(words)} 个单词，耗时 {perf_counter() - started_at:.2f} 秒")
         if words:
             print(f"最后一个单词结束位置：{max(word['end'] for word in words):.2f} 秒")
 
         # 推理结束后创建独立连接，不复用上传请求的连接。
         database = connect_database()
-        with database.cursor() as cursor:
-            cursor.execute("SELECT enable_lemmatization FROM movies WHERE id=%s", (movie_id,))
-            task = cursor.fetchone()
-        if task is None:
-            return
         if task.get("enable_lemmatization") == 1:
             words = lemmatize_words(words)
         cet4_words = (match_cet4_words(words, database, selected_word_ids) if book_id == 1 else

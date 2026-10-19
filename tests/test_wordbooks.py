@@ -130,7 +130,7 @@ def test_background_uses_chosen_book_and_sentence_times(books_client, monkeypatc
     _, database = books_client
     words = [dict(word='rare', start=1, end=2),
              dict(word='example', start=3, end=4, sentence_start=2, sentence_end=5, sentence_text='An example.')]
-    monkeypatch.setattr(movie_task, 'transcribe_movie', lambda _: words)
+    monkeypatch.setattr(movie_task, 'transcribe_movie', lambda _, model="tiny.en": words)
     monkeypatch.setattr(movie_task, 'connect_database', lambda: database)
     movie_task.process_movie(12, 'test.mp4', None, 4)
     assert database.cursor.return_value.__enter__.return_value.executemany.call_args.args[1] == [

@@ -89,4 +89,25 @@ def test_upload_persists_lemmatization_choice(web_upload, option, expected):
     assert response.status_code == 200
     cursor = database.cursor.return_value.__enter__.return_value
     assert 'enable_lemmatization' in cursor.execute.call_args.args[0]
-    assert cursor.execute.call_args.args[1][-1] is expected
+    assert cursor.execute.call_args.args[1][-2] is expected
+
+
+@pytest.mark.parametrize('model,expected', [('tiny.en','tiny.en'),('base.en','base.en'),(None,'tiny.en')])
+def test_upload_persists_whisper_model(web_upload, model, expected):
+    client, database, worker, _ = web_upload
+    main.app.dependency_overrides[get_current_user_id] = lambda: 42
+    response = client.post('/video/upload',data={} if model is None else {'whisper_model':model},
+        files={'file':('lesson.mp4',b'video','video/mp4')})
+    assert response.status_code == 200
+    assert database.cursor.return_value.__enter__.return_value.execute.call_args.args[1][-1] == expected
+
+
+def test_invalid_model_does_not_save_or_schedule(web_upload):
+    client, database, worker, directory = web_upload
+    main.app.dependency_overrides[get_current_user_id] = lambda: 42
+    result = client.post('/video/upload',data={'whisper_model':'../../model'},
+        files={'file':('lesson.mp4',b'video','video/mp4')})
+    assert result.status_code == 422
+    worker.assert_not_called()
+    database.commit.assert_not_called()
+    assert not list(directory.iterdir())

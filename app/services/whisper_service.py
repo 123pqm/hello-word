@@ -1,22 +1,32 @@
-from functools import lru_cache
+import gc
 from threading import Lock
 
 from app.services.sentence_timing import words_with_sentence_times
 
 _inference_lock = Lock()
+_model = None
+_model_name = None
 
 
-@lru_cache(maxsize=1)
-def _load_model():
+def _load_model(model_name: str = "tiny.en"):
+    global _model, _model_name
+    if model_name not in {"tiny.en", "base.en"}:
+        raise ValueError("不支持的语音识别模型")
     # 首次分析才加载模型；普通接口和离线测试不需要下载或加载 Whisper。
     import whisper
 
-    return whisper.load_model("tiny.en")
+    if _model_name != model_name or _model is None:
+        _model = None
+        _model_name = None
+        gc.collect()
+        _model = whisper.load_model(model_name, device="cpu")
+        _model_name = model_name
+    return _model
 
 
-def transcribe_movie(file_path: str):
+def transcribe_movie(file_path: str, model_name: str = "tiny.en"):
     with _inference_lock:
-        result = _load_model().transcribe(
+        result = _load_model(model_name).transcribe(
             file_path,
             language="en",
             fp16=False,

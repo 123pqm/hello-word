@@ -33,7 +33,7 @@ def test_worker_reads_persisted_option(monkeypatch,enabled):
     cursor.fetchone.side_effect=[{'enable_lemmatization':int(enabled)},{'id':9}]
     words=[{'word':'worked','start':1,'end':2}]
     monkeypatch.setattr(worker,'connect_database',lambda:db)
-    monkeypatch.setattr(worker,'transcribe_movie',lambda _:words)
+    monkeypatch.setattr(worker,'transcribe_movie',lambda _, model="tiny.en":words)
     transform=MagicMock(return_value=[dict(words[0],lemma='work')])
     monkeypatch.setattr(worker,'lemmatize_words',transform)
     matcher=MagicMock(return_value=[])

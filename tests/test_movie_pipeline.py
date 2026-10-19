@@ -42,7 +42,7 @@ def pipeline(monkeypatch, mysql_test_database, tmp_path):
 @pytest.mark.mysql
 def test_upload_to_flashcards_with_real_database(pipeline, monkeypatch):
     client, word, word_id, directory = pipeline
-    monkeypatch.setattr(movie_task, "transcribe_movie", lambda _: [
+    monkeypatch.setattr(movie_task, "transcribe_movie", lambda _, model="tiny.en": [
         {"word": word, "start": 1.2, "end": 1.6, "sentence_start": 1, "sentence_end": 2,
          "sentence_text": f"It's {word}, today!"},
         {"word": word, "start": 5, "end": 6, "sentence_start": 5, "sentence_end": 7,
@@ -86,7 +86,7 @@ def test_upload_to_flashcards_with_real_database(pipeline, monkeypatch):
 def test_analysis_failure_is_visible_without_flashcards(pipeline, monkeypatch):
     client, _, _, _ = pipeline
 
-    def fail(_):
+    def fail(_, model="tiny.en"):
         raise RuntimeError("test transcription failure")
 
     monkeypatch.setattr(movie_task, "transcribe_movie", fail)
@@ -104,7 +104,7 @@ def test_analysis_failure_is_visible_without_flashcards(pipeline, monkeypatch):
 @pytest.mark.mysql
 def test_delete_removes_movie_and_words_only_for_owner(pipeline, monkeypatch):
     client, word, _, _ = pipeline
-    monkeypatch.setattr(movie_task, "transcribe_movie", lambda _: [
+    monkeypatch.setattr(movie_task, "transcribe_movie", lambda _, model="tiny.en": [
         {"word": word, "start": 1, "end": 2, "sentence_text": f"A {word}."}])
     movie_id = client.post("/video/upload", files={"file": ("delete.mp4", b"video", "video/mp4")}).json()["data"]["movie_id"]
     assert len(client.get(f"/video/{movie_id}/words").json()["data"]["words"]) == 1
@@ -131,7 +131,7 @@ def test_delete_during_transcription_cannot_recreate_words(pipeline, monkeypatch
     monkeypatch.setattr(main, "process_movie", lambda *args: None)
     movie_id = client.post("/video/upload", files={"file": ("running.mp4", b"video", "video/mp4")}).json()["data"]["movie_id"]
 
-    def transcribe(_):
+    def transcribe(_, model="tiny.en"):
         assert client.delete(f"/video/{movie_id}").status_code == 204
         return [{"word": word, "start": 1, "end": 2, "sentence_text": f"A {word}."}]
 
@@ -180,7 +180,8 @@ def test_history_is_owned_paginated_and_excludes_legacy(pipeline):
 
 @pytest.mark.mysql
 @pytest.mark.parametrize('enabled', [False, True])
-def test_lemmatization_upload_worker_database_pipeline(pipeline, monkeypatch, enabled):
+@pytest.mark.parametrize('model_name', ['tiny.en', 'base.en'])
+def test_lemmatization_upload_worker_database_pipeline(pipeline, monkeypatch, enabled, model_name):
     client, _, _, _ = pipeline
     database = connect_database()
     try:
@@ -191,15 +192,20 @@ def test_lemmatization_upload_worker_database_pipeline(pipeline, monkeypatch, en
         database.commit()
     finally:
         database.close()
-    monkeypatch.setattr(movie_task, 'transcribe_movie', lambda _: [
+    observed_models = []
+    def recognize(_, model):
+        observed_models.append(model)
+        return [
         {'word':'worked','start':1.2,'end':1.6,'sentence_start':1,'sentence_end':3,
-         'sentence_text':'They worked yesterday.'}])
+         'sentence_text':'They worked yesterday.'}]
+    monkeypatch.setattr(movie_task, 'transcribe_movie', recognize)
     result = client.post('/video/upload', data={
-        'enable_lemmatization':str(enabled).lower(), 'selection_mode':'selected_cet4',
+        'whisper_model':model_name, 'enable_lemmatization':str(enabled).lower(), 'selection_mode':'selected_cet4',
         'selected_word_ids':json.dumps([word_id])},
         files={'file':('lemma.mp4',b'test-video','video/mp4')})
     assert result.status_code == 200
     movie_id = result.json()['data']['movie_id']
+    assert observed_models == [model_name]
     cards = client.get(f'/video/{movie_id}/words').json()['data']['words']
     assert len(cards) == int(enabled)
     if enabled:
