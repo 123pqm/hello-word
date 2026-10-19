@@ -77,3 +77,16 @@ def test_web_upload_rolls_back_and_removes_file_on_db_failure(web_upload):
     database.rollback.assert_called_once()
     worker.assert_not_called()
     assert not list(directory.iterdir())
+
+
+@pytest.mark.parametrize('option,expected', [('true', True), ('false', False), (None, False)])
+def test_upload_persists_lemmatization_choice(web_upload, option, expected):
+    client, database, worker, directory = web_upload
+    main.app.dependency_overrides[get_current_user_id] = lambda: 42
+    response = client.post('/video/upload',
+        data={} if option is None else {'enable_lemmatization': option},
+        files={'file': ('lesson.mp4', b'video', 'video/mp4')})
+    assert response.status_code == 200
+    cursor = database.cursor.return_value.__enter__.return_value
+    assert 'enable_lemmatization' in cursor.execute.call_args.args[0]
+    assert cursor.execute.call_args.args[1][-1] is expected

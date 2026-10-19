@@ -420,6 +420,7 @@ def upload_video(
     selection_mode: str = Form("all_cet4"),
     selected_word_ids: str | None = Form(None),
     book_id: int = Form(1),
+    enable_lemmatization: bool = Form(False),
 ):
     # 旧客户端未传范围时仍使用整本四级词库；自选模式必须提供有效 ID。
     matching_ids = None
@@ -482,10 +483,10 @@ def upload_video(
         with database.cursor() as cursor:
             cursor.execute(
                 """
-                INSERT INTO movies (user_id, file_name, file_path, status)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO movies (user_id, file_name, file_path, status, enable_lemmatization)
+                VALUES (%s, %s, %s, %s, %s)
                 """,
-                (user_id, file.filename, str(file_path), "pending"),
+                (user_id, file.filename, str(file_path), "pending", enable_lemmatization),
             )
             movie_id = cursor.lastrowid
         database.commit()

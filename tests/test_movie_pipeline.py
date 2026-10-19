@@ -75,7 +75,7 @@ def test_upload_to_flashcards_with_real_database(pipeline, monkeypatch):
     assert status.json()["data"]["status"] == "completed"
     assert status.json()["data"]["matched_word_count"] == 1
     words = client.get(f"/video/{movie_id}/words")
-    assert words.json()["data"]["words"] == [
+    assert [{k:v for k,v in row.items() if k != 'id'} for row in words.json()["data"]["words"]] == [
         {"word": word, "meaning": "整合测试", "start_time": 1, "end_time": 2,
          "sentence_text": f"It's {word}, today!"},
     ]
@@ -176,3 +176,40 @@ def test_history_is_owned_paginated_and_excludes_legacy(pipeline):
     assert client.get("/video/history", headers={"Authorization": "Bearer invalid"}).status_code == 401
     for query in ("limit=0", "limit=101", "before_id=-1"):
         assert client.get("/video/history?" + query).status_code == 422
+
+
+@pytest.mark.mysql
+@pytest.mark.parametrize('enabled', [False, True])
+def test_lemmatization_upload_worker_database_pipeline(pipeline, monkeypatch, enabled):
+    client, _, _, _ = pipeline
+    database = connect_database()
+    try:
+        with database.cursor() as cursor:
+            cursor.execute("INSERT IGNORE INTO cet4 (word,pos,meaning) VALUES ('work','v.','工作')")
+            cursor.execute("SELECT id FROM cet4 WHERE word='work'")
+            word_id = cursor.fetchone()['id']
+        database.commit()
+    finally:
+        database.close()
+    monkeypatch.setattr(movie_task, 'transcribe_movie', lambda _: [
+        {'word':'worked','start':1.2,'end':1.6,'sentence_start':1,'sentence_end':3,
+         'sentence_text':'They worked yesterday.'}])
+    result = client.post('/video/upload', data={
+        'enable_lemmatization':str(enabled).lower(), 'selection_mode':'selected_cet4',
+        'selected_word_ids':json.dumps([word_id])},
+        files={'file':('lemma.mp4',b'test-video','video/mp4')})
+    assert result.status_code == 200
+    movie_id = result.json()['data']['movie_id']
+    cards = client.get(f'/video/{movie_id}/words').json()['data']['words']
+    assert len(cards) == int(enabled)
+    if enabled:
+        assert cards[0]['word'] == 'work'
+        assert cards[0]['sentence_text'] == 'They worked yesterday.'
+        assert cards[0]['start_time'] == 1 and cards[0]['end_time'] == 3
+    database = connect_database()
+    try:
+        with database.cursor() as cursor:
+            cursor.execute('SELECT enable_lemmatization FROM movies WHERE id=%s',(movie_id,))
+            assert bool(cursor.fetchone()['enable_lemmatization']) == enabled
+    finally:
+        database.close()

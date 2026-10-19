@@ -45,6 +45,9 @@ def match_vocabulary(words: list[dict], vocabulary: dict[str, str]) -> list[dict
     seen = set()
     for item in sorted(words, key=lambda item: item["start"]):
         word = item["word"].strip().lower()
+        lemma = item.get("lemma", word)
+        if lemma in vocabulary:
+            word = lemma
         if word in vocabulary and word not in seen:
             seen.add(word)
             matched.append({

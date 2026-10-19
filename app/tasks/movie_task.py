@@ -5,6 +5,7 @@ from app.database import connect_database
 from app.services.cet4_service import match_cet4_words
 from app.services.wordbook_service import match_wordbook_words
 from app.services.whisper_service import transcribe_movie
+from app.services.lemmatization_service import lemmatize_words
 
 
 logger = logging.getLogger(__name__)
@@ -24,6 +25,13 @@ def process_movie(movie_id: int, file_path: str, selected_word_ids: list[int] | 
 
         # 推理结束后创建独立连接，不复用上传请求的连接。
         database = connect_database()
+        with database.cursor() as cursor:
+            cursor.execute("SELECT enable_lemmatization FROM movies WHERE id=%s", (movie_id,))
+            task = cursor.fetchone()
+        if task is None:
+            return
+        if task.get("enable_lemmatization") == 1:
+            words = lemmatize_words(words)
         cet4_words = (match_cet4_words(words, database, selected_word_ids) if book_id == 1 else
                       match_wordbook_words(words, database, book_id, selected_word_ids))
         print(f"词书 {book_id} 匹配完成：去重后共 {len(cet4_words)} 个单词，每词保留首次出现所在句子的时间")
