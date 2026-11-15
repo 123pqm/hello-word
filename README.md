@@ -2,7 +2,15 @@
 
 从自己选的英语影片里提取词书中的单词。打开闪卡，就能听到这个词出现的那句原声；答错的词可以加入第 1、3、7 天的复习计划。
 
-**[观看演示视频（4 分 35 秒）](https://github.com/123pqm/hello-word/raw/refs/heads/master/docs/media/hello-word-demo.mp4)** · [鸿蒙客户端](harmony/) · [FastAPI 后端](backend/) · [配置与启动](#配置与启动)
+**[在线查看项目介绍（PDF）](docs/hello-word.pdf)** · [下载面试版 PPT](https://github.com/123pqm/hello-word/raw/refs/heads/master/docs/hello-word.pptx) · [下载演示视频（4 分 35 秒）](https://github.com/123pqm/hello-word/raw/refs/heads/master/docs/media/hello-word-demo.mp4)
+
+## 项目亮点
+
+**一部原片可以支撑整套闪卡。** 例如，某句台词出现在 2.66～3.84 秒：点击闪卡后，鸿蒙播放器跳转到 2.66 秒，确认定位成功后开始播放，播放进度达到 3.84 秒就暂停。词卡只需关联影片、例句和起止时间戳，不必为每句话单独生成视频文件。若识别边界不准，用户可以直接校正时间。首次分析的主要耗时来自 Whisper 转写；回放时复用已有时间戳。[后端写入词卡](backend/app/tasks/movie_task.py) · [鸿蒙播放控制](harmony/entry/src/main/ets/pages/word_flashcard.ets)
+
+**同一个词，在不同环节用不同方式处理。** 匹配词库时，词形还原让台词里的 *ran* 能找到词条 *run*；查词时，近似词模型能为 *addd* 建议 *add*。进入答题模式后，同一个近似词模型还用于挑选干扰项，让用户听原句、辨词义。[词形还原](backend/app/services/lemmatization_service.py) · [近似词服务](backend/app/services/spelling_service.py)
+
+**答错的词能回到原句再学。** 用户可以在闪卡里就当前台词向 AI 提问，也可以在答题后重听原声。开启错题自动收录后，复习计划按第 1、3、7 天安排练习；主动收藏的单词另行保存。[复习计划实现](backend/app/reviews.py)
 
 ## 应用实机截图
 
@@ -23,13 +31,6 @@
 | 对照答案 | AI 快捷提问 | 查看例句解析 | 查看复习计划 |
 | :---: | :---: | :---: | :---: |
 | [![对照答案](docs/media/quiz.png)](docs/media/quiz.png) | [![AI 快捷提问](docs/media/assistant.png)](docs/media/assistant.png) | [![查看例句解析](docs/media/ai-reply.png)](docs/media/ai-reply.png) | [![查看复习计划](docs/media/review.png)](docs/media/review.png) |
-
-## 一部影片怎么变成闪卡？
-
-1. **选影片和词书。** 后端用 Whisper 转写台词，按所选词书匹配单词。开启词形还原后，像 *ran* 这样的变形也能匹配到 *run*。
-2. **回到原句。** 点闪卡上的跳转按钮，从句首播放到句末。可以隐藏释义和例句，也可以手动校正例句与时间戳。
-3. **听原声，辨词义。** 答题模式使用近似词模型挑选干扰项；同一个模型也用于词库搜索建议。需要解释时，可向 AI 学习搭子询问当前单词或台词。
-4. **收藏和复习。** 主动收藏想再看的词，或者开启错题自动收录，按计划复习。
 
 ## 配置与启动
 
