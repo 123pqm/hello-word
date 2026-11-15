@@ -1,0 +1,30 @@
+.venv/
+.venv.*/
+.tools/
+__pycache__/
+.pytest_cache/
+.uv-cache/
+.pip-cache/
+*.py[cod]
+.env
+uploads/
+media/
+models/
+data/
+
+# Local test runs and generated deployment bundles
+.pytest-tmp*/
+*.log
+/deploy/*.tar.gz
+/deploy/*-tests.txt
+
+# Environment-specific secrets (keep the shareable template)
+.env.*
+!.env.example
+
+# Redistributable word lists and spelling-model vocabulary used by import commands
+!/data/
+/data/*
+!/data/cet4.txt
+!/resources/spelling_model/data/
+!/resources/spelling_model/data/vocab.json

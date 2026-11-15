@@ -1,0 +1,41 @@
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
+const ts=require(path.join(process.env.DEVECO_SDK_HOME,'default/openharmony/ets/build-tools/ets-loader/node_modules/typescript/lib/typescript.js'));
+const root=path.join(__dirname,'../entry/src/main/ets');
+const settle=async()=>{for(let i=0;i<150;i++)await Promise.resolve()};
+function setup(count=2, auto=false, review=false, disk=new Map()){
+ let source=fs.readFileSync(path.join(root,'pages/question_flashcard.ets'),'utf8').split('  build() {')[0]+'\n}';
+ source=source.replace('@Entry','').replace('@Component','').replace('struct QuestionFlashcardPage','export class QuestionFlashcardPage').replace(/@State /g,'').replace(/@StorageLink\('access_token'\) @Watch\('sessionChanged'\) /g,'');
+ const card=id=>({id,word:'same',meaning:'meaning',start_time:1,end_time:3});
+ const options=[0,1,2,3].map(i=>({text:'meaning'+i}));
+ const calls=[]; const pages=[]; const added=[];
+ const reviewApi={add:async id=>{added.push(id)},list:async(t,after)=>({words:Array.from({length:Math.min(5,count-after)},(_,i)=>card(after+i+1)),total:count,due:count}),question:async id=>({id:"r"+id,word:"same",options}),answer:async()=>({selected_index:1,correct_index:2,correct:false,options})};
+ const api={words:async(m,offset)=>{pages.push(offset);return {total:count,words:Array.from({length:Math.min(5,count-offset)},(_,i)=>card(offset+i+1))}},question:async(m,id)=>{calls.push(id);return {id:'q'+id,word:'same',options}},answer:async()=>({selected_index:1,correct_index:2,options:options.map((x,i)=>({...x,word:'word'+i}))})};
+ const store={key:(user,review,movie)=>`${user}_${review}_${movie}`,load:async(c,k)=>disk.has(k)?JSON.parse(disk.get(k)):undefined,save:async(c,k,v)=>{disk.set(k,JSON.stringify(v))},clear:async(c,k)=>{disk.delete(k)}};
+ const scope={exports:{},AppStorage:{get:()=>7},require:n=>({'../storage/QuizProgressStore':{QuizProgressStore:store},'@kit.ArkUI':{router:{back:()=>{},getParams:()=>({movie_id:1,review})}},'../service/FlashcardService':{FlashcardService:{words:async()=>[card(1),card(2)]}},'../service/QuizService':{QuizService:api},'../service/ReviewService':{ReviewService:reviewApi},'../storage/FlashcardSettingsStore':{FlashcardSettingsStore:{load:async()=>({autoAddWrongToReview:auto})}},'../common/HttpClient':{ApiError:class extends Error{}}}[n])};
+ vm.runInNewContext(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText,scope);
+ const page=new scope.exports.QuestionFlashcardPage();page.getUIContext=()=>({getHostContext:()=>({})});page.token='token';page.aboutToAppear();return {page,api,calls,pages,added,reviewApi,disk};
+}
+(async()=>{
+ const {page,api}=setup();await settle();
+ assert.equal(page.loading,false);assert.equal(page.questionId,'q1');assert.equal(page.currentCorrectIndex,-1);
+ await page.selectOption(1);assert.equal(page.answered,true);assert.equal(page.currentOptions[0].word,'word0');
+ page.nextWord();await settle();assert.equal(page.questionId,'q2');assert.equal(page.answered,false);assert.equal(page.currentCorrectIndex,-1);
+ assert.equal(page.currentOptions[0].word,undefined);
+ api.answer=async()=>{throw new Error('network')};await page.selectOption(0);assert.equal(page.answered,false);assert.equal(page.submitting,false);assert.equal(page.answerError,'network');
+ let resolve;api.answer=()=>new Promise(r=>resolve=r);const task=page.selectOption(0);await settle();page.onPageHide();resolve({selected_index:0,correct_index:0,options:[]});await task;assert.equal(page.answered,false);
+ const second=setup();await settle();second.page.currentIndex=1;second.page.error='failed';second.page.nextWord();assert.equal(second.page.finished,true);assert.equal(second.page.error,'');
+ const lazy=setup(20);await settle();assert.equal(lazy.calls.join(','),'1,2,3,4,5');assert.equal(lazy.pages.join(','),'0');
+ lazy.page.nextWord();await settle();assert.equal(lazy.page.questionId,'q2');assert.equal(lazy.calls.join(','),'1,2,3,4,5,6');assert.equal(lazy.pages.join(','),'0,5');
+ lazy.page.onPageHide();await settle();assert.equal(lazy.calls.length,6);
+ const disabled=setup();await settle();await disabled.page.selectOption(1);assert.equal(disabled.added.length,0);
+ const enabled=setup(2,true);await settle();await enabled.page.selectOption(1);assert.equal(enabled.added.join(','),'q1');
+ const correct=setup(2,true);await settle();correct.api.answer=async()=>({selected_index:0,correct_index:0,correct:true,options:[]});await correct.page.selectOption(0);assert.equal(correct.added.length,0);
+ const review=setup(8,true,true);await settle();assert.equal(review.page.questionId,'r1');await review.page.selectOption(1);assert.equal(review.added.length,0);review.page.nextWord();await settle();assert.equal(review.page.questionId,'r2');
+ const memory=new Map();
+ const first=setup(2,false,false,memory);await settle();first.api.answer=async()=>({selected_index:0,correct_index:0,correct:true,options:[]});await first.page.selectOption(0);first.page.onPageHide();
+ const resumed=setup(2,false,false,memory);await settle();assert.equal(resumed.page.answered,true);assert.equal(resumed.page.correctCount,1);assert.equal(resumed.calls.length,1);await resumed.page.nextWord();await settle();assert.equal(resumed.page.currentIndex,1);await resumed.page.selectOption(1);await resumed.page.nextWord();assert.equal(resumed.page.finished,true);assert.equal(resumed.page.completedCount,2);
+ const result=setup(2,false,false,memory);await settle();assert.equal(result.page.finished,true);assert.equal(result.page.correctCount,1);await result.page.confirmResult();assert.equal(memory.size,0);
+ const fresh=setup(2,false,false,memory);await settle();assert.equal(fresh.page.currentIndex,0);assert.equal(fresh.page.completedCount,0);
+ const reviewDisk=new Map();const reviewFirst=setup(2,false,true,reviewDisk);await settle();await reviewFirst.page.selectOption(1);reviewFirst.page.onPageHide();const reviewResumed=setup(2,false,true,reviewDisk);await settle();assert.equal(reviewResumed.page.answered,true);assert.equal(reviewResumed.page.completedCount,1);assert.equal(reviewResumed.page.questionId,'r1');
+ console.log('PASS: server answer, English reveal, same-word reset, failed submit, stale response, completion');
+})().catch(e=>{console.error(e);process.exitCode=1});

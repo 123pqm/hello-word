@@ -1,0 +1,12 @@
+{
+  "src": [
+    "pages/Index",
+    "pages/home/Home",
+    "pages/study/Study",
+    "pages/wordbook/book_detail",
+    "pages/upload_movie",
+    "pages/word_flashcard",
+    "pages/question_flashcard",
+    "pages/membership"
+  ]
+}
