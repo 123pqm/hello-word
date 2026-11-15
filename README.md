@@ -2,11 +2,27 @@
 
 从自己选的英语影片里提取词书中的单词。打开闪卡，就能听到这个词出现的那句原声；答错的词可以加入第 1、3、7 天的复习计划。
 
-**[观看演示视频（1 分 20 秒）](https://github.com/123pqm/hello-word/raw/refs/heads/master/docs/media/hello-word-demo.mp4)** · [鸿蒙客户端](harmony/) · [FastAPI 后端](backend/) · [配置与启动](#配置与启动)
+**[观看演示视频（4 分 35 秒）](https://github.com/123pqm/hello-word/raw/refs/heads/master/docs/media/hello-word-demo.mp4)** · [鸿蒙客户端](harmony/) · [FastAPI 后端](backend/) · [配置与启动](#配置与启动)
 
-| 原片闪卡 | 情景答题 | AI 学习搭子 | 错题复习 |
+## 应用实机截图
+
+**选择学习内容**
+
+| 学习首页 | 选择影片 | 选择词书 | 猜你想搜 |
 | :---: | :---: | :---: | :---: |
-| ![在闪卡中定位原片台词](docs/media/flashcard.png) | ![答题后对照易混选项](docs/media/quiz.png) | ![基于当前单词的快捷提问](docs/media/assistant.png) | ![查看待复习单词](docs/media/review.png) |
+| [![学习首页](docs/media/home.png)](docs/media/home.png) | [![选择影片](docs/media/import-movie.png)](docs/media/import-movie.png) | [![选择词书](docs/media/wordbook.png)](docs/media/wordbook.png) | [![猜你想搜](docs/media/search.png)](docs/media/search.png) |
+
+**看原片、学单词**
+
+| 原片闪卡 | 展开释义与例句 | 校正片段起止时间 | 听原声答题 |
+| :---: | :---: | :---: | :---: |
+| [![原片闪卡](docs/media/flashcard.png)](docs/media/flashcard.png) | [![展开释义与例句](docs/media/reveal.png)](docs/media/reveal.png) | [![校正片段起止时间](docs/media/correct.png)](docs/media/correct.png) | [![听原声答题](docs/media/quiz-listen.png)](docs/media/quiz-listen.png) |
+
+**答题、提问与复习**
+
+| 对照答案 | AI 快捷提问 | 查看例句解析 | 查看复习计划 |
+| :---: | :---: | :---: | :---: |
+| [![对照答案](docs/media/quiz.png)](docs/media/quiz.png) | [![AI 快捷提问](docs/media/assistant.png)](docs/media/assistant.png) | [![查看例句解析](docs/media/ai-reply.png)](docs/media/ai-reply.png) | [![查看复习计划](docs/media/review.png)](docs/media/review.png) |
 
 ## 一部影片怎么变成闪卡？
 
